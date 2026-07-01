@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node / React
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Database
+*.sqlite3
+postgres-data/
+
+# Automation pipeline artifacts
+automation/downloads/
+automation/frames/
+automation/audio/
+*.mp4
+*.wav
+
+# Logs
+*.log
+logs/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Docker
+docker-compose.override.yml

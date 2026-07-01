@@ -9,10 +9,10 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [ ] Branch strategy set up (main / develop / feature/*)
 - [ ] LICENSE decided
 
-## Phase 2 — Database Design
-- [ ] ER diagram finalized
-- [ ] SQLAlchemy models written
-- [ ] Alembic migrations initialized
+## Phase 2 — Database Design ✅
+- [x] ER diagram finalized (`docs/er-diagram.md`)
+- [x] SQLAlchemy models written (`backend/app/models/`)
+- [x] Alembic migrations initialized and verified (upgrade + downgrade tested against a real DB)
 
 ## Phase 3 — Backend API
 - [ ] JWT auth (login/logout/me)

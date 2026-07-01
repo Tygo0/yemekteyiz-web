@@ -39,3 +39,7 @@ logs/
 
 # Docker
 docker-compose.override.yml
+
+# Backend runtime
+backend/instance/
+*.db

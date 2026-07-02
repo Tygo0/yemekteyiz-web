@@ -14,11 +14,13 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [x] SQLAlchemy models written (`backend/app/models/`)
 - [x] Alembic migrations initialized and verified (upgrade + downgrade tested against a real DB)
 
-## Phase 3 — Backend API
-- [ ] JWT auth (login/logout/me)
-- [ ] CRUD: contestants, weeks, episodes, dishes, scores
-- [ ] Marshmallow/Pydantic schemas + validation
-- [ ] Unit tests
+## Phase 3 — Backend API ✅
+- [x] JWT auth (login/logout/me)
+- [x] CRUD: seasons, weeks, contestants, episodes, dishes, scores
+- [x] Marshmallow schemas + validation (incl. 1-10 score range, dish category enum)
+- [x] Statistics endpoint (weekly winners, avg score, highest score, most common dish, most successful contestant, avg weekly score, score distribution)
+- [x] Automation endpoints stubbed (real pipeline is Phase 6)
+- [x] Unit/integration tests — 16 passing, covering auth, full CRUD chain, validation rules, and statistics math
 
 ## Phase 4 — React Frontend
 - [ ] Dashboard

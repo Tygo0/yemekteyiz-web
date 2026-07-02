@@ -49,15 +49,29 @@ yemekteyiz/
 
 See `docs/ARCHITECTURE.md` for the full design and `docs/ROADMAP.md` for the phased plan.
 
-## Getting Started
-
-> Placeholder — filled in during Phase 3/4 once backend and frontend scaffolding exist.
+## Getting Started (Backend)
 
 ```bash
-git clone <repo-url>
-cd yemekteyiz
-docker compose up --build
+cd backend
+pip install -r requirements.txt --break-system-packages   # or use a venv
+
+cp ../.env.example .env   # then edit DATABASE_URL etc.
+export FLASK_APP=wsgi.py
+
+flask db upgrade                                    # create tables
+ADMIN_USERNAME=admin ADMIN_PASSWORD=changeme python3 seed.py   # create first admin
+
+flask run   # http://localhost:5000
 ```
+
+Run the test suite:
+```bash
+cd backend
+python3 -m pytest tests/ -v
+```
+
+Full Docker Compose setup (frontend + backend + postgres + automation) lands in
+Phase 8 — see `docs/ROADMAP.md`.
 
 ## Engineering Principles
 

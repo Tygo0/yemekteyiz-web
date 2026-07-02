@@ -6,7 +6,7 @@ extracts structured contestant/score/dish data automatically.
 
 ## Project Status
 
-🚧 Phase 1 — Planning & Architecture (see `docs/ROADMAP.md`)
+🚧 Phase 3 complete — Backend REST API (auth, CRUD, statistics, tests). See `docs/ROADMAP.md`.
 
 ## System Overview
 
@@ -82,4 +82,4 @@ Phase 8 — see `docs/ROADMAP.md`.
 
 ## License
 
-TBD
+MIT — see `LICENSE`.

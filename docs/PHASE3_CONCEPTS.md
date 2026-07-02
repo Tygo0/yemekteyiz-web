@@ -1,93 +1,93 @@
 # Phase 3 — Concepts & Reasoning (Meeting Prep Notes)
 
-## 1. Why does almost every route look nearly identical (load schema → call service → jsonify)?
+## 1. Why JWT instead of traditional sessions?
 
-That's intentional, not repetition-for-its-own-sake. It's the "thin controller" pattern
-from Phase 1: a route's only job is translating HTTP ↔ Python. If someone asks "why
-does `create_week` look basically like `create_contestant`?" — the answer is that
-consistency here means anyone on the team can predict what a route does without
-reading it closely, and all the actual decisions (can this be created? does the
-parent exist? is this a duplicate?) live in one place: the service function.
+A traditional session stores "who's logged in" in server memory or a session table,
+and the browser holds a cookie that references it. JWT flips this: the server signs a
+token containing the admin's identity and hands it to the client. The client sends
+that token on every request; the server verifies the signature and trusts the
+contents — no database lookup needed to check "is this session valid." This is why
+JWT is the standard choice for REST APIs, especially ones that might later be called
+by non-browser clients (like the AI automation service, or a future mobile app).
 
-## 2. Why validate the same thing twice — in the Marshmallow schema *and* in the service?
+**Trade-off worth knowing:** stateless tokens can't be "revoked" instantly the way a
+session can (deleting a session row instantly logs someone out; a JWT stays valid
+until it expires). Our `/api/auth/logout` endpoint is honest about this in a code
+comment — it's a client-side action (throw away the token), not a server-side one.
+A production system would add a token blocklist if instant revocation mattered.
 
-They check different things. The **schema** checks shape: is `value` an integer
-between 1 and 10, is `name` a non-empty string, is `category` one of five known
-strings. It has no idea what's in the database. The **service** checks state: does
-the week this contestant claims to belong to actually exist, is this week number
-already taken for this season, does the winner being set actually belong to this
-week. A schema literally cannot answer "does this season exist" — that requires a
-database query, which is a service's job, not a schema's.
+## 2. Why does every route call a service function instead of writing the logic inline?
 
-## 3. Why does `POST /api/scores` reject a request where the schema itself is perfectly valid (e.g. `value: 8` is in range) but the API still returns 400?
+Look at any route file (e.g. `app/weeks/routes.py`) — it does three things: parse/validate
+input via a schema, call one service function, return JSON. All the actual decisions
+(does this week already exist? does the winner belong to this week?) live in
+`app/services/week_service.py`. This is the "thin controller, fat service" pattern
+from Phase 1's notes, now actually implemented. The payoff: when the AI automation
+system needs to create a contestant in Phase 6, it hits the same
+`POST /api/contestants` endpoint a human admin would use — same validation, same
+business rules, zero duplicated logic.
 
-This is the score/episode/contestant mismatch check: a score is always *for* the
-contestant that a specific episode belongs to (episode → one contestant's cooking
-session). If a request says "episode 5, but score contestant 7" and episode 5 belongs
-to contestant 3, that's internally inconsistent data — schema validation can't catch
-this because it doesn't know about relationships between IDs, only about the shape of
-each field individually. This is a good concrete example to have ready if someone
-asks "why isn't Marshmallow enough on its own?"
+## 3. Why do services raise exceptions instead of returning `None`/error codes?
 
-## 4. Why is `PUT /api/weeks/{id}` a separate schema (`WeekUpdateSchema`) from `POST /api/weeks` (`WeekSchema`)?
+`NotFoundError`, `ConflictError`, and the base `AppError` (in `app/utils/errors.py`)
+get caught by a single app-wide error handler and turned into consistent JSON error
+responses. This means individual routes never need `if not week: return 404` — they
+just call the service, and if something's wrong, an exception bubbles up automatically
+into the right HTTP status. One place decides what an error response looks like,
+instead of every route reinventing it slightly differently.
 
-On create, `season_id` and `week_number` are required — a week can't exist without
-them. On update, you might only want to change `notes`, so *nothing* should be
-required. Using one schema with `partial=True` for updates would technically work,
-but a dedicated update schema documents intent clearly and stops someone accidentally
-making `season_id` re-assignable through a PUT (which should probably never happen —
-you don't want to be able to move a week to a different season by editing it).
+## 4. Why validate the same rule (1-10 score) in three places?
 
-## 5. Why are GET endpoints public but POST/PUT/DELETE require a JWT?
+The Marshmallow schema validates it (400 with a clear message), the database has a
+`CHECK` constraint (guaranteed even if something bypasses the API), and the score
+service also checks the contestant matches the episode. This isn't accidental
+duplication — each layer catches a different *kind* of mistake:
+- Schema: bad input from a client (human typo, buggy frontend, malformed AI output).
+- Service: a business rule that spans multiple tables (contestant must belong to the
+  episode being scored) — something a single-field schema check can't know.
+- Database: the last line of defense, in case anything above is bypassed entirely.
 
-This matches the user roles from Phase 1 exactly: Visitors can view everything,
-Admins can create/edit/delete. `@jwt_required()` is a decorator from
-Flask-JWT-Extended that runs before the route function — if there's no valid token in
-the `Authorization: Bearer <token>` header, the request never reaches the route logic
-at all and gets a 401 automatically.
+## 5. Why write tests that hit the real HTTP endpoints instead of just testing service functions directly?
 
-## 6. Why is the automation API stubbed out now instead of built for real?
+The tests in `tests/test_crud_chain.py` go through `client.post("/api/weeks", json=...)`
+rather than calling `week_service.create_week()` directly. This exercises the entire
+path — JSON parsing, schema validation, the service logic, and the JSON response
+shape — which is exactly what a real client (the React frontend or the automation
+service) will actually do. A bug in how a route calls a service, or in how a response
+gets serialized, would be invisible to a test that only calls the service function.
 
-Straight from the blueprint's engineering principles: "build the manual management
-system completely before implementing AI automation." The endpoints exist now
-(`/api/automation/import`, `/status`, `/logs`) so the REST API surface is complete and
-the frontend (Phase 4) can be built against real routes — but they return `501 Not
-Implemented` / placeholder data until Phase 6, where the actual pipeline gets wired in.
+## 6. Why does the score_distribution bug matter, and what does it teach?
 
-## 7. How were these actually verified, not just written?
+Worth mentioning in a meeting as a concrete example of testing paying off: the
+statistics service originally built `score_distribution` with integer keys
+(`{1: 0, 2: 0, ...}`). That's valid Python, but JSON object keys are *always* strings
+— so after `jsonify()`, the frontend would have received `{"1": 0, "2": 0, ...}`.
+A test asserting on the actual HTTP response (not just the raw Python function) caught
+this immediately. This is the concrete case for testing through the real API, not just
+unit functions in isolation — the bug would otherwise have shown up as "why is my
+chart empty" during frontend work in Phase 4.
 
-All 16 tests run against a real (in-memory SQLite) database through the actual HTTP
-layer — `client.post("/api/scores", json={...})` — not by calling service functions
-directly. That matters because it proves the whole path works: routing → schema
-validation → service logic → database → serialized response. Specific things proven,
-not assumed:
-- A duplicate week number for the same season is rejected (409).
-- A week pointing at a season that doesn't exist is rejected (404).
-- A score value outside 1–10 is rejected by the schema before it reaches the DB (400).
-- A score naming a contestant that doesn't match the episode's actual contestant is
-  rejected (400) — this one caught a real gap in relying on schema validation alone.
-- Deleting a week cascades and actually removes its contestants (not just the week row).
-- The statistics math is correct against known input (average score, most successful
-  contestant by average, weekly winners, score histogram) — computed by hand and
-  asserted, not eyeballed.
-- One real bug was caught by testing rather than assumed away: `score_distribution`
-  building a dict with **int** keys works fine in Python, but Flask's `jsonify()`
-  converts all dict keys to strings — so `stats["score_distribution"][10]` would
-  silently return `KeyError` once JSON-encoded, even though the Python code looked
-  correct. The test caught it before it became a frontend bug in Phase 4.
+## 7. Why separate Update schemas (e.g. `WeekUpdateSchema`) from Create schemas?
+
+Create schemas mark fields `required=True` where a full record needs them. PUT
+requests only send the fields being changed, so a separate schema makes every field
+optional but still validated *if present* (`partial=True` on `.load()` reinforces
+this). This avoids a common bug where a partial update accidentally wipes out fields
+the client didn't intend to touch, and prevents fields that shouldn't be editable
+(like reassigning `season_id` on a week) from silently becoming editable through PUT.
 
 ## 8. Likely meeting questions & short answers
 
-- **"How do you know the API actually works, not just that it doesn't crash?"** →
-  16 tests hit real HTTP endpoints against a real database and assert on actual
-  values (e.g. average score is 7.75, not just "status 200").
-- **"What stops a bad admin request from corrupting data?"** → Two layers: schema
-  validation for shape/type (Marshmallow), service-level checks for relationships
-  and business rules (does the parent exist, is this a duplicate, does this ID
-  actually belong to that other ID).
-- **"Why separate schemas for create vs. update?"** → Different fields are required
-  in each case, and it prevents fields that shouldn't be editable (like reassigning
-  a week to a different season) from silently becoming editable through PUT.
+- **"How does auth actually protect a route?"** → `@jwt_required()` decorator; verified
+  by a test that a protected POST returns 401 with no token.
+- **"What happens if two different validation layers disagree?"** → They don't get the
+  chance to — schema runs first and rejects bad shape/range before the service (and
+  therefore the DB) ever sees it. Each layer is a stricter filter than the one before.
+- **"How do you know the CRUD endpoints actually work end-to-end, not just in theory?"**
+  → 16 passing tests exercise the full entity chain (season → week → contestant →
+  episode → dish → score) through real HTTP requests, including negative tests
+  that confirm bad data gets rejected with the right status code.
 - **"Is the automation API real yet?"** → The routes exist and return proper JSON,
-  but the actual AI pipeline behind them is Phase 6 — right now they're placeholders
-  by design, matching the blueprint's phased approach.
+  but the actual AI pipeline behind them is Phase 6 — right now they're honest
+  placeholders (501/idle), matching the blueprint's phased approach, not fake
+  success responses.

@@ -1,0 +1,13 @@
+# Only needed if you're running against real PostgreSQL instead of the
+# default SQLite setup (see docs/RUNNING_LOCALLY.md → "Using Postgres instead
+# of SQLite"). Install with:
+#
+#   pip install -r requirements-postgres.txt --break-system-packages
+#
+# psycopg2-binary sometimes needs to compile from source on very new Python
+# versions if PyPI doesn't yet have a prebuilt wheel for your platform. If
+# that happens, install PostgreSQL's dev headers first:
+#   Debian/Ubuntu: sudo apt install libpq-dev python3-dev
+#   Fedora/RHEL:   sudo dnf install libpq-devel python3-devel
+#   macOS:         brew install postgresql
+psycopg2-binary==2.9.9

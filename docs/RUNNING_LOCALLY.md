@@ -106,13 +106,19 @@ ADMIN_USERNAME=admin ADMIN_PASSWORD=changeme123 python3 seed.py
 
 ## Using Postgres instead of SQLite
 
-SQLite is the default because it needs no separate install. If you'd rather run
-against a real Postgres instance you already have installed and running:
+SQLite is the default because it needs no separate install — the core
+`requirements.txt` deliberately doesn't include a Postgres driver, so a plain
+SQLite setup never needs to compile anything. If you'd rather run against a real
+Postgres instance you already have installed and running:
 
-1. Create a database and user matching what you want to use.
-2. In `backend/.env`, comment out the SQLite `DATABASE_URL` line and uncomment
+1. Install the Postgres driver (not included by default):
+   ```bash
+   pip install -r requirements-postgres.txt --break-system-packages
+   ```
+2. Create a database and user matching what you want to use.
+3. In `backend/.env`, comment out the SQLite `DATABASE_URL` line and uncomment
    the Postgres line, editing it to match your actual username/password/database.
-3. Run `flask db upgrade` again — Alembic will create the schema in Postgres instead.
+4. Run `flask db upgrade` again — Alembic will create the schema in Postgres instead.
 
 ## Troubleshooting
 
@@ -132,3 +138,13 @@ migrations (`flask db upgrade` must run first). Re-run both in that order.
 running, or `frontend/.env`'s `VITE_API_BASE_URL` doesn't match where the backend
 is actually listening. Confirm `http://localhost:5000/api/health` returns
 `{"status": "ok"}` in your browser first.
+
+**`pip install` fails trying to build `psycopg2-binary`** (compiler errors,
+`libpq-fe.h: No such file or directory`) — this shouldn't happen anymore:
+`requirements.txt` no longer includes a Postgres driver at all, since the default
+setup uses SQLite and doesn't need one. If you still see this, you're likely
+using an older copy of `requirements.txt` — pull the latest, or manually remove
+any `psycopg2-binary` line from it. Only install
+`requirements-postgres.txt` if you're deliberately switching to Postgres (see
+above), and even then, install PostgreSQL's dev headers first if it still fails
+to build (`sudo apt install libpq-dev python3-dev` on Debian/Ubuntu).

@@ -16,7 +16,7 @@ needs nothing running in the background — the whole database is just one file.
 ## 1. Clone the repo
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Tygo0/yemekteyiz-web.git
 cd yemekteyiz
 ```
 

@@ -27,9 +27,12 @@ weeks, episodes, dishes, and scores — no AI automation yet (that's a future ph
 
 **Documentation**
 - `docs/RUNNING_LOCALLY.md` — step-by-step local setup guide, clean-room verified
-  against a genuinely fresh checkout (this process caught and fixed two real bugs:
-  a Docker-only database hostname in the example env file, and a seed script that
-  was silently ignoring its own config file)
+  against a genuinely fresh checkout. This process (plus a real bug report from
+  testing on Linux) caught and fixed three issues: a Docker-only database hostname
+  in the example env file, `seed.py` silently ignoring its own `.env` file, and
+  `wsgi.py` (the actual server entrypoint) having that same bug — plus
+  `psycopg2-binary` being force-installed even for the SQLite-only default path,
+  now split into an optional `requirements-postgres.txt`
 - `docs/ARCHITECTURE.md`, `docs/er-diagram.md` — system design and database schema
 - `docs/ROADMAP.md` — phase-by-phase progress tracker
 - `docs/PHASE1_CONCEPTS.md` through `PHASE5_CONCEPTS.md` — the reasoning behind every

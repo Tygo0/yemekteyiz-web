@@ -1,0 +1,29 @@
+YEMEKTEYIZ — HOW TO RUN
+========================
+
+1. Run this file:
+   - Linux/macOS: open a terminal in this folder and run: ./yemekteyiz-server
+     (if it says "permission denied", run: chmod +x yemekteyiz-server   first)
+   - Windows: double-click yemekteyiz-server.exe
+     (if Windows SmartScreen warns you, click "More info" -> "Run anyway" —
+     this is expected for an app that isn't code-signed)
+
+2. A terminal/console window will open and print something like:
+
+     Created admin account — username: admin  password: admin123
+     Yemekteyiz is running at http://localhost:5000
+
+   Your web browser should open automatically. If it doesn't, open
+   http://localhost:5000 yourself.
+
+3. Log in as admin (top right, "Admin login") using the username/password
+   printed in the terminal window, to add weeks, contestants, scores, etc.
+
+4. To stop the server: close the terminal window, or press CTRL+C inside it.
+
+Your data is saved in a file called yemekteyiz.db that appears next to this
+executable after you first run it — it persists between runs. Delete that
+file if you want to start over with a fresh empty database.
+
+No installation, no Python, no Node.js required — everything needed is
+bundled inside this one file.

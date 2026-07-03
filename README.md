@@ -51,8 +51,12 @@ See `docs/ARCHITECTURE.md` for the full design and `docs/ROADMAP.md` for the pha
 
 ## Running It Locally
 
-Full step-by-step guide (clean-room verified, with troubleshooting):
-**[docs/RUNNING_LOCALLY.md](docs/RUNNING_LOCALLY.md)**
+**Just want to run the app, not edit the code?** Download the standalone
+executable from this repo's **Releases** page — no Python/Node install
+required. See `HOW_TO_RUN.txt`.
+
+**Want to edit/develop the code?** Full step-by-step guide (clean-room
+verified, with troubleshooting): **[docs/RUNNING_LOCALLY.md](docs/RUNNING_LOCALLY.md)**
 
 Quick version:
 

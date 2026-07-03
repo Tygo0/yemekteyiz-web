@@ -43,3 +43,11 @@ docs/PHASE*_CONCEPTS.md
 # Backend runtime
 backend/instance/
 *.db
+
+# Packaged executable build artifacts (regenerate with build_executable.py;
+# the actual binary belongs on the GitHub Releases page, not in git history)
+backend/build/
+backend/dist/
+backend/*.spec
+backend/frontend_dist/
+backend/.secret_key

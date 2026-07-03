@@ -33,7 +33,8 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 
 ## Phase 5 — Local-Runnable Release ✅
 - [x] Website fully usable with zero AI involvement (achieved in Phase 4: full CRUD + edit on every entity)
-- [x] Consolidated, clean-room-verified local setup guide (`docs/RUNNING_LOCALLY.md`) — caught and fixed 2 real bugs (bad default DB hostname, seed.py not loading .env)
+- [x] Consolidated, clean-room-verified local setup guide (`docs/RUNNING_LOCALLY.md`) — caught and fixed 3 real bugs (bad default DB hostname, seed.py and wsgi.py both not loading .env, psycopg2 force-installed for the SQLite-only default path)
+- [x] Standalone single-file executable distribution (`docs/BUILDING_RELEASE_EXECUTABLE.md`) — no Python/Node required to run, single process serves both API and frontend, auto-migrates DB and seeds an admin on first launch. Verified end-to-end in complete isolation (binary copied to an empty folder, zero source code present).
 - [ ] Version tagged (`v0.1.0`) and published as a GitHub Release — final step, see instructions below
 
 **Redefinition note:** originally scoped as "manual system complete," which Phase 4

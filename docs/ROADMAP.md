@@ -31,8 +31,18 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [x] Design system: Fraunces/IBM Plex type pairing, çini-tile palette, ScorePaddle signature component
 - [x] Verified against the real backend (login → create → edit → statistics, full round trip via curl; confirmed visitor reads reflect admin edits immediately)
 
-## Phase 5 — Manual System Complete
-- [ ] Website fully usable with zero AI involvement
+## Phase 5 — Local-Runnable Release ✅
+- [x] Website fully usable with zero AI involvement (achieved in Phase 4: full CRUD + edit on every entity)
+- [x] Consolidated, clean-room-verified local setup guide (`docs/RUNNING_LOCALLY.md`) — caught and fixed 2 real bugs (bad default DB hostname, seed.py not loading .env)
+- [ ] Version tagged (`v0.1.0`) and published as a GitHub Release — final step, see instructions below
+
+**Redefinition note:** originally scoped as "manual system complete," which Phase 4
+already satisfied. Docker/Kubernetes/cloud deployment were considered for this phase
+but explicitly descoped — this sandbox has no Docker available to verify container
+config, and shipping unverified Docker files in a release was judged too risky.
+Containerization may return as its own future phase once it can be tested for real.
+Phase 5 is now scoped to exactly what was asked: a release someone else can clone and
+run locally, with documentation good enough that they don't need to ask questions.
 
 ## Phase 6 — AI Automation
 - [ ] Video discovery (yt-dlp polling)

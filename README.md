@@ -6,7 +6,8 @@ extracts structured contestant/score/dish data automatically.
 
 ## Project Status
 
-🚧 Phase 4 complete — React frontend (public pages + admin controls). See `docs/ROADMAP.md`.
+🚧 v0.1.0 — Full manual management system (backend + frontend), locally runnable.
+AI automation and containerized deployment are not built yet. See `docs/ROADMAP.md`.
 
 ## System Overview
 
@@ -34,7 +35,7 @@ React Frontend → REST API (HTTPS) → Flask Backend → SQLAlchemy → Postgre
 | Frontend   | React, Vite, React Router, Axios, Material UI / Tailwind |
 | Database   | PostgreSQL |
 | Automation | yt-dlp, FFmpeg, PaddleOCR/EasyOCR, Whisper, Gemini/GPT-4.1 Vision, LangChain (optional) |
-| Deployment | Docker, Docker Compose |
+| Deployment | Docker, Docker Compose *(planned — not yet implemented, see docs/ROADMAP.md)* |
 
 ## Repository Structure
 
@@ -42,47 +43,40 @@ React Frontend → REST API (HTTPS) → Flask Backend → SQLAlchemy → Postgre
 yemekteyiz/
 ├── backend/       # Flask REST API (clean architecture: routes → services → models)
 ├── frontend/      # React + Vite SPA
-├── automation/    # Independent AI pipeline, talks to backend only via HTTP
-├── docs/          # Architecture, ER diagram, API spec, roadmap
-└── docker-compose.yml
+├── automation/    # Independent AI pipeline, talks to backend only via HTTP (not yet built — see docs/ROADMAP.md)
+└── docs/          # Architecture, ER diagram, API spec, roadmap, local setup guide
 ```
 
 See `docs/ARCHITECTURE.md` for the full design and `docs/ROADMAP.md` for the phased plan.
 
-## Getting Started (Backend)
+## Running It Locally
+
+Full step-by-step guide (clean-room verified, with troubleshooting):
+**[docs/RUNNING_LOCALLY.md](docs/RUNNING_LOCALLY.md)**
+
+Quick version:
 
 ```bash
+# Backend
 cd backend
-pip install -r requirements.txt --break-system-packages   # or use a venv
-
-cp ../.env.example .env   # then edit DATABASE_URL etc.
+pip install -r requirements.txt --break-system-packages
+cp .env.example .env
 export FLASK_APP=wsgi.py
+flask db upgrade
+ADMIN_USERNAME=admin ADMIN_PASSWORD=changeme123 python3 seed.py
+python3 wsgi.py                 # http://localhost:5000
 
-flask db upgrade                                    # create tables
-ADMIN_USERNAME=admin ADMIN_PASSWORD=changeme python3 seed.py   # create first admin
-
-flask run   # http://localhost:5000
+# Frontend (new terminal)
+cd frontend
+npm install
+cp .env.example .env
+npm run dev                     # http://localhost:5173
 ```
 
-Run the test suite:
+Run the backend test suite:
 ```bash
 cd backend
 python3 -m pytest tests/ -v
-```
-
-Full Docker Compose setup (frontend + backend + postgres + automation) lands in
-Phase 8 — see `docs/ROADMAP.md`.
-
-## Getting Started (Frontend)
-
-```bash
-cd frontend
-npm install
-cp .env.example .env   # points VITE_API_BASE_URL at the backend
-
-npm run dev       # http://localhost:5173
-npm run build      # production build to dist/
-npm run lint
 ```
 
 ## Engineering Principles

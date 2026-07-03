@@ -5,6 +5,15 @@ Usage:
     ADMIN_USERNAME=admin ADMIN_PASSWORD=changeme python3 seed.py
 """
 import os
+from dotenv import load_dotenv
+
+# Explicit load, not implicit: python-dotenv's automatic .env discovery only
+# kicks in for the `flask` CLI command (e.g. `flask db upgrade`). This script
+# is run as a plain `python3 seed.py`, which python-dotenv does NOT auto-load
+# for — without this line, DATABASE_URL etc. from .env would be silently
+# ignored and the app would fall back to config.py's hardcoded default.
+load_dotenv()
+
 from app import create_app
 from app.extensions import db
 from app.models import Admin

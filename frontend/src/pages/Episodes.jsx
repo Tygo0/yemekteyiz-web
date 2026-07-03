@@ -14,6 +14,10 @@ export default function Episodes() {
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ broadcast_date: '', video_url: '' })
+  const [editError, setEditError] = useState(null)
+
   function loadAll() {
     setLoading(true)
     Promise.all([episodeService.list(), contestantService.list()])
@@ -47,6 +51,37 @@ export default function Episodes() {
     }
   }
 
+  async function handleDelete(id) {
+    if (!confirm('Delete this episode and its dishes/scores?')) return
+    try {
+      await episodeService.remove(id)
+      loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  function startEdit(ep) {
+    setEditingId(ep.id)
+    setEditForm({ broadcast_date: ep.broadcast_date || '', video_url: ep.video_url || '' })
+    setEditError(null)
+  }
+
+  async function handleUpdate(e, id) {
+    e.preventDefault()
+    setEditError(null)
+    try {
+      await episodeService.update(id, {
+        broadcast_date: editForm.broadcast_date || null,
+        video_url: editForm.video_url || null,
+      })
+      setEditingId(null)
+      loadAll()
+    } catch (err) {
+      setEditError(err.message)
+    }
+  }
+
   if (loading) return <LoadingState label="Loading episodes…" />
   if (error) return <ErrorState message={error} />
 
@@ -61,24 +96,82 @@ export default function Episodes() {
         <EmptyState title="No episodes yet" />
       ) : (
         <div className="border-2 border-ink/10 rounded-lg divide-y-2 divide-ink/10 bg-stone-50 mb-8">
-          {episodes.map((e) => (
-            <div key={e.id} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <p className="font-medium text-ink">{contestantName(e.contestant_id)}</p>
-                <p className="text-xs text-ink/50">{e.broadcast_date || 'Broadcast date TBD'}</p>
-              </div>
-              {e.video_url && (
-                <a
-                  href={e.video_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-teal font-medium hover:underline"
+          {episodes.map((e) =>
+            editingId === e.id ? (
+              <form
+                key={e.id}
+                onSubmit={(ev) => handleUpdate(ev, e.id)}
+                className="flex flex-wrap items-end gap-3 px-5 py-3"
+              >
+                <div>
+                  <label className="block text-xs font-medium text-ink/60 mb-1">Broadcast date</label>
+                  <input
+                    type="date"
+                    value={editForm.broadcast_date}
+                    onChange={(ev) => setEditForm({ ...editForm, broadcast_date: ev.target.value })}
+                    className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink/60 mb-1">Video URL</label>
+                  <input
+                    value={editForm.video_url}
+                    onChange={(ev) => setEditForm({ ...editForm, video_url: ev.target.value })}
+                    className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm w-64"
+                  />
+                </div>
+                {editError && <ErrorState message={editError} />}
+                <button
+                  type="submit"
+                  className="rounded-md bg-teal text-stone-50 text-sm font-medium px-4 py-1.5 hover:bg-teal-dark"
                 >
-                  Watch
-                </a>
-              )}
-            </div>
-          ))}
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingId(null)}
+                  className="rounded-md border-2 border-ink/15 text-sm font-medium px-4 py-1.5 hover:bg-stone-200"
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <div key={e.id} className="flex items-center justify-between px-5 py-3">
+                <div>
+                  <p className="font-medium text-ink">{contestantName(e.contestant_id)}</p>
+                  <p className="text-xs text-ink/50">{e.broadcast_date || 'Broadcast date TBD'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {e.video_url && (
+                    <a
+                      href={e.video_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-teal font-medium hover:underline"
+                    >
+                      Watch
+                    </a>
+                  )}
+                  {isAuthenticated && (
+                    <>
+                      <button
+                        onClick={() => startEdit(e)}
+                        className="text-sm text-teal font-medium hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(e.id)}
+                        className="text-sm text-brick font-medium hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ),
+          )}
         </div>
       )}
 

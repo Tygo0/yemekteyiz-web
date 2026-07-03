@@ -26,9 +26,10 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [x] Dashboard (admin-only: quick stats, recent weeks)
 - [x] Admin panel controls (add/edit/delete forms, shown only when authenticated — same pages as public view)
 - [x] Public pages (Weeks, Contestants, Episodes, Dishes, Scores, Statistics)
+- [x] Full edit capability on every entity (seasons, weeks incl. winner selection, contestants incl. bio/photo, episodes, dishes, scores) — not just create
 - [x] JWT persisted client-side, auto-attached to requests, session restored on refresh
 - [x] Design system: Fraunces/IBM Plex type pairing, çini-tile palette, ScorePaddle signature component
-- [x] Verified against the real backend (login → create → statistics, full round trip via curl)
+- [x] Verified against the real backend (login → create → edit → statistics, full round trip via curl; confirmed visitor reads reflect admin edits immediately)
 
 ## Phase 5 — Manual System Complete
 - [ ] Website fully usable with zero AI involvement

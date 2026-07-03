@@ -24,3 +24,17 @@ def create_episode(data):
     db.session.add(episode)
     db.session.commit()
     return episode
+
+
+def update_episode(episode_id, data):
+    episode = get_episode(episode_id)
+    for key, value in data.items():
+        setattr(episode, key, value)
+    db.session.commit()
+    return episode
+
+
+def delete_episode(episode_id):
+    episode = get_episode(episode_id)
+    db.session.delete(episode)
+    db.session.commit()

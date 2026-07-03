@@ -23,6 +23,10 @@ export default function Dishes() {
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', category: 'main_course' })
+  const [editError, setEditError] = useState(null)
+
   function loadAll() {
     setLoading(true)
     Promise.all([dishService.list(), episodeService.list(), contestantService.list()])
@@ -67,6 +71,24 @@ export default function Dishes() {
     }
   }
 
+  function startEdit(d) {
+    setEditingId(d.id)
+    setEditForm({ name: d.name, category: d.category })
+    setEditError(null)
+  }
+
+  async function handleUpdate(e, id) {
+    e.preventDefault()
+    setEditError(null)
+    try {
+      await dishService.update(id, { name: editForm.name, category: editForm.category })
+      setEditingId(null)
+      loadAll()
+    } catch (err) {
+      setEditError(err.message)
+    }
+  }
+
   if (loading) return <LoadingState label="Loading dishes…" />
   if (error) return <ErrorState message={error} />
 
@@ -86,24 +108,78 @@ export default function Dishes() {
         <EmptyState title="No dishes recorded yet" />
       ) : (
         <div className="border-2 border-ink/10 rounded-lg divide-y-2 divide-ink/10 bg-stone-50 mb-8">
-          {dishes.map((d) => (
-            <div key={d.id} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <p className="font-medium text-ink">{d.name}</p>
-                <p className="text-xs text-ink/50">
-                  {categoryLabel(d.category)} · {episodeLabel(d.episode_id)}
-                </p>
-              </div>
-              {isAuthenticated && (
+          {dishes.map((d) =>
+            editingId === d.id ? (
+              <form
+                key={d.id}
+                onSubmit={(e) => handleUpdate(e, d.id)}
+                className="flex flex-wrap items-end gap-3 px-5 py-3"
+              >
+                <div>
+                  <label className="block text-xs font-medium text-ink/60 mb-1">Dish name</label>
+                  <input
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    required
+                    className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink/60 mb-1">Category</label>
+                  <select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                    className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {editError && <ErrorState message={editError} />}
                 <button
-                  onClick={() => handleDelete(d.id)}
-                  className="text-sm text-brick font-medium hover:underline"
+                  type="submit"
+                  className="rounded-md bg-teal text-stone-50 text-sm font-medium px-4 py-1.5 hover:bg-teal-dark"
                 >
-                  Delete
+                  Save
                 </button>
-              )}
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => setEditingId(null)}
+                  className="rounded-md border-2 border-ink/15 text-sm font-medium px-4 py-1.5 hover:bg-stone-200"
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <div key={d.id} className="flex items-center justify-between px-5 py-3">
+                <div>
+                  <p className="font-medium text-ink">{d.name}</p>
+                  <p className="text-xs text-ink/50">
+                    {categoryLabel(d.category)} · {episodeLabel(d.episode_id)}
+                  </p>
+                </div>
+                {isAuthenticated && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => startEdit(d)}
+                      className="text-sm text-teal font-medium hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d.id)}
+                      className="text-sm text-brick font-medium hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ),
+          )}
         </div>
       )}
 

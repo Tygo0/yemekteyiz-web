@@ -16,6 +16,10 @@ export default function Scores() {
   const [formError, setFormError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ judge_name: '', value: 8 })
+  const [editError, setEditError] = useState(null)
+
   function loadAll() {
     setLoading(true)
     Promise.all([scoreService.list(), episodeService.list(), contestantService.list()])
@@ -58,6 +62,37 @@ export default function Scores() {
     }
   }
 
+  async function handleDelete(id) {
+    if (!confirm('Delete this score?')) return
+    try {
+      await scoreService.remove(id)
+      loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  function startEdit(s) {
+    setEditingId(s.id)
+    setEditForm({ judge_name: s.judge_name, value: s.value })
+    setEditError(null)
+  }
+
+  async function handleUpdate(e, id) {
+    e.preventDefault()
+    setEditError(null)
+    try {
+      await scoreService.update(id, {
+        judge_name: editForm.judge_name,
+        value: Number(editForm.value),
+      })
+      setEditingId(null)
+      loadAll()
+    } catch (err) {
+      setEditError(err.message)
+    }
+  }
+
   if (loading) return <LoadingState label="Loading scores…" />
   if (error) return <ErrorState message={error} />
 
@@ -70,18 +105,77 @@ export default function Scores() {
         <EmptyState title="No scores recorded yet" />
       ) : (
         <div className="flex flex-wrap gap-4 mb-10">
-          {scores.map((s) => (
-            <div
-              key={s.id}
-              className="border-2 border-ink/10 bg-stone-50 rounded-lg p-4 flex items-center gap-3"
-            >
-              <ScorePaddle value={s.value} size="sm" />
-              <div>
-                <p className="font-medium text-ink text-sm">{contestantName(s.contestant_id)}</p>
-                <p className="text-xs text-ink/50">by {s.judge_name}</p>
+          {scores.map((s) =>
+            editingId === s.id ? (
+              <form
+                key={s.id}
+                onSubmit={(e) => handleUpdate(e, s.id)}
+                className="border-2 border-teal bg-stone-50 rounded-lg p-4 flex flex-col gap-2"
+              >
+                <div className="flex gap-2">
+                  <input
+                    value={editForm.judge_name}
+                    onChange={(e) => setEditForm({ ...editForm, judge_name: e.target.value })}
+                    required
+                    placeholder="Judge"
+                    className="rounded-md border-2 border-ink/15 px-2 py-1 bg-white text-sm w-24"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={editForm.value}
+                    onChange={(e) => setEditForm({ ...editForm, value: e.target.value })}
+                    required
+                    className="rounded-md border-2 border-ink/15 px-2 py-1 bg-white text-sm w-16"
+                  />
+                </div>
+                {editError && <ErrorState message={editError} />}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="rounded-md bg-teal text-stone-50 text-xs font-medium px-3 py-1 hover:bg-teal-dark"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="rounded-md border-2 border-ink/15 text-xs font-medium px-3 py-1 hover:bg-stone-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div
+                key={s.id}
+                className="border-2 border-ink/10 bg-stone-50 rounded-lg p-4 flex items-center gap-3"
+              >
+                <ScorePaddle value={s.value} size="sm" />
+                <div>
+                  <p className="font-medium text-ink text-sm">{contestantName(s.contestant_id)}</p>
+                  <p className="text-xs text-ink/50">by {s.judge_name}</p>
+                  {isAuthenticated && (
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        onClick={() => startEdit(s)}
+                        className="text-xs text-teal font-medium hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        className="text-xs text-brick font-medium hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       )}
 

@@ -19,3 +19,11 @@ def create_season(data):
     db.session.add(season)
     db.session.commit()
     return season
+
+
+def update_season(season_id, data):
+    season = get_season(season_id)
+    for key, value in data.items():
+        setattr(season, key, value)
+    db.session.commit()
+    return season

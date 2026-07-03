@@ -40,3 +40,17 @@ def create_score(data):
     db.session.add(score)
     db.session.commit()
     return score
+
+
+def update_score(score_id, data):
+    score = get_score(score_id)
+    for key, value in data.items():
+        setattr(score, key, value)
+    db.session.commit()
+    return score
+
+
+def delete_score(score_id):
+    score = get_score(score_id)
+    db.session.delete(score)
+    db.session.commit()

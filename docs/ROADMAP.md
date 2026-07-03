@@ -22,10 +22,13 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [x] Automation endpoints stubbed (real pipeline is Phase 6)
 - [x] Unit/integration tests — 16 passing, covering auth, full CRUD chain, validation rules, and statistics math
 
-## Phase 4 — React Frontend
-- [ ] Dashboard
-- [ ] Admin panel (protected routes)
-- [ ] Public pages (contestants, results, recipes, statistics)
+## Phase 4 — React Frontend ✅
+- [x] Dashboard (admin-only: quick stats, recent weeks)
+- [x] Admin panel controls (add/edit/delete forms, shown only when authenticated — same pages as public view)
+- [x] Public pages (Weeks, Contestants, Episodes, Dishes, Scores, Statistics)
+- [x] JWT persisted client-side, auto-attached to requests, session restored on refresh
+- [x] Design system: Fraunces/IBM Plex type pairing, çini-tile palette, ScorePaddle signature component
+- [x] Verified against the real backend (login → create → statistics, full round trip via curl)
 
 ## Phase 5 — Manual System Complete
 - [ ] Website fully usable with zero AI involvement

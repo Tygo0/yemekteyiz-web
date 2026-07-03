@@ -6,7 +6,7 @@ extracts structured contestant/score/dish data automatically.
 
 ## Project Status
 
-🚧 Phase 3 complete — Backend REST API (auth, CRUD, statistics, tests). See `docs/ROADMAP.md`.
+🚧 Phase 4 complete — React frontend (public pages + admin controls). See `docs/ROADMAP.md`.
 
 ## System Overview
 
@@ -72,6 +72,18 @@ python3 -m pytest tests/ -v
 
 Full Docker Compose setup (frontend + backend + postgres + automation) lands in
 Phase 8 — see `docs/ROADMAP.md`.
+
+## Getting Started (Frontend)
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # points VITE_API_BASE_URL at the backend
+
+npm run dev       # http://localhost:5173
+npm run build      # production build to dist/
+npm run lint
+```
 
 ## Engineering Principles
 

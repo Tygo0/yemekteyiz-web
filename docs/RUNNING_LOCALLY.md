@@ -17,7 +17,7 @@ needs nothing running in the background — the whole database is just one file.
 
 ```bash
 git clone https://github.com/Tygo0/yemekteyiz-web.git
-cd yemekteyiz
+cd yemekteyiz-web
 ```
 
 ## 2. Backend setup

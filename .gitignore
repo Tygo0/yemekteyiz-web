@@ -37,8 +37,8 @@ logs/
 .idea/
 .DS_Store
 
-# Docker
-docker-compose.override.yml
+# Personal meeting-prep notes — kept locally, not published to GitHub
+docs/PHASE*_CONCEPTS.md
 
 # Backend runtime
 backend/instance/

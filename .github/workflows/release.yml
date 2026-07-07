@@ -1,0 +1,77 @@
+name: Release executables
+
+# Builds the standalone PyInstaller executable on both Linux and Windows
+# runners (PyInstaller can't cross-compile, so each OS's binary has to be
+# built by that actual OS — see backend/build_executable.py) and attaches
+# both to a GitHub Release for the tag.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release for"
+        required: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_name: yemekteyiz-server-linux
+            built_name: yemekteyiz-server
+          - os: windows-latest
+            asset_name: yemekteyiz-server-windows.exe
+            built_name: yemekteyiz-server.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build executable
+        working-directory: backend
+        run: python build_executable.py
+
+      - name: Stage artifact
+        shell: bash
+        run: |
+          mkdir -p staged
+          cp "backend/dist/${{ matrix.built_name }}" "staged/${{ matrix.asset_name }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: staged/${{ matrix.asset_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: artifacts/*

@@ -41,3 +41,15 @@ class AutomationImportSchema(Schema):
         required=True,
         validate=validate.Length(equal=4),
     )
+
+
+class AutomationImportLogSchema(Schema):
+    id = fields.Int(dump_only=True)
+    week_id = fields.Int(dump_only=True)
+    status = fields.Method("get_status", dump_only=True)
+    contestant_count = fields.Int(dump_only=True)
+    error_message = fields.Str(dump_only=True, allow_none=True)
+    created_at = fields.DateTime(dump_only=True)
+
+    def get_status(self, obj):
+        return obj.status.value

@@ -11,6 +11,7 @@ from app.models.episode import Episode
 from app.models.dish import Dish, DishCategory
 from app.models.score import Score
 from app.models.admin import Admin
+from app.models.automation_log import AutomationImportLog, AutomationImportStatus
 
 __all__ = [
     "Season",
@@ -21,4 +22,6 @@ __all__ = [
     "DishCategory",
     "Score",
     "Admin",
+    "AutomationImportLog",
+    "AutomationImportStatus",
 ]

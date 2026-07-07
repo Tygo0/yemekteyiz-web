@@ -117,3 +117,45 @@ def test_import_rejects_score_out_of_range(client, auth_headers):
     payload = {"week_id": week_id, "contestants": contestants}
     resp = client.post("/api/automation/import", json=payload, headers=auth_headers)
     assert resp.status_code == 400
+
+
+def test_successful_import_is_logged(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    week_id = _create_week(client, auth_headers, season_id)
+    payload = {
+        "week_id": week_id,
+        "contestants": [_contestant_payload(n) for n in ["Ayşe", "Mehmet", "Fatma", "Ali"]],
+    }
+    resp = client.post("/api/automation/import", json=payload, headers=auth_headers)
+    assert resp.status_code == 201
+
+    logs = client.get(f"/api/automation/logs?week_id={week_id}").get_json()["logs"]
+    assert len(logs) == 1
+    assert logs[0]["status"] == "success"
+    assert logs[0]["contestant_count"] == 4
+    assert logs[0]["error_message"] is None
+
+
+def test_failed_import_is_logged_with_error_message(client, auth_headers):
+    payload = {"week_id": 999, "contestants": [_contestant_payload(n) for n in "ABCD"]}
+    resp = client.post("/api/automation/import", json=payload, headers=auth_headers)
+    assert resp.status_code == 404
+
+    logs = client.get("/api/automation/logs?week_id=999").get_json()["logs"]
+    assert len(logs) == 1
+    assert logs[0]["status"] == "failure"
+    assert "999" in logs[0]["error_message"]
+
+
+def test_logs_endpoint_requires_no_auth_and_lists_all_by_default(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    week_id = _create_week(client, auth_headers, season_id)
+    payload = {
+        "week_id": week_id,
+        "contestants": [_contestant_payload(n) for n in ["Ayşe", "Mehmet", "Fatma", "Ali"]],
+    }
+    client.post("/api/automation/import", json=payload, headers=auth_headers)
+
+    resp = client.get("/api/automation/logs")
+    assert resp.status_code == 200
+    assert len(resp.get_json()["logs"]) == 1

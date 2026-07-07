@@ -7,12 +7,13 @@ own validation and persistence, exactly like a human admin's requests would.
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from app.schemas.automation_schema import AutomationImportSchema
+from app.schemas.automation_schema import AutomationImportSchema, AutomationImportLogSchema
 from app.schemas.contestant_schema import ContestantSchema
 from app.schemas.episode_schema import EpisodeSchema
 from app.schemas.dish_schema import DishSchema
 from app.schemas.score_schema import ScoreSchema
 from app.services import automation_service
+from app.utils.errors import AppError
 
 bp = Blueprint("automation", __name__, url_prefix="/api/automation")
 
@@ -21,13 +22,29 @@ contestant_schema = ContestantSchema()
 episode_schema = EpisodeSchema()
 dish_schema = DishSchema(many=True)
 score_schema = ScoreSchema(many=True)
+log_schema = AutomationImportLogSchema(many=True)
 
 
 @bp.post("/import")
 @jwt_required()
 def trigger_import():
     data = import_schema.load(request.get_json(force=True) or {})
-    created = automation_service.import_week(data)
+
+    try:
+        created = automation_service.import_week(data)
+    except AppError as e:
+        automation_service.log_import(
+            week_id=data["week_id"],
+            success=False,
+            contestant_count=len(data["contestants"]),
+            error_message=e.message,
+        )
+        raise
+
+    automation_service.log_import(
+        week_id=data["week_id"], success=True, contestant_count=len(created)
+    )
+
     return jsonify({
         "status": "imported",
         "week_id": data["week_id"],
@@ -50,4 +67,6 @@ def automation_status():
 
 @bp.get("/logs")
 def automation_logs():
-    return jsonify({"logs": [], "note": "Structured import logging not yet implemented"}), 200
+    week_id = request.args.get("week_id", type=int)
+    logs = automation_service.list_import_logs(week_id=week_id)
+    return jsonify({"logs": log_schema.dump(logs)}), 200

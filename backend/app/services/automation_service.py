@@ -1,3 +1,5 @@
+from app.extensions import db
+from app.models import AutomationImportLog, AutomationImportStatus
 from app.services import week_service, contestant_service, episode_service, dish_service, score_service
 from app.utils.errors import ConflictError
 
@@ -61,3 +63,22 @@ def import_week(data):
         })
 
     return created
+
+
+def log_import(week_id, success, contestant_count=0, error_message=None):
+    log = AutomationImportLog(
+        week_id=week_id,
+        status=AutomationImportStatus.SUCCESS if success else AutomationImportStatus.FAILURE,
+        contestant_count=contestant_count,
+        error_message=error_message,
+    )
+    db.session.add(log)
+    db.session.commit()
+    return log
+
+
+def list_import_logs(week_id=None):
+    query = AutomationImportLog.query
+    if week_id is not None:
+        query = query.filter_by(week_id=week_id)
+    return query.order_by(AutomationImportLog.created_at.desc()).all()

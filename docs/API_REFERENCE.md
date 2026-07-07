@@ -94,7 +94,7 @@ Returns:
 |--------|------|------|-------|
 | POST | `/automation/import` | required | Imports one week's worth of AI-extracted data. See below. |
 | GET | `/automation/status` | none | Returns `{ status: "idle" }` — no background scheduler running yet |
-| GET | `/automation/logs` | none | Returns `{ logs: [] }` — structured import logging not yet implemented |
+| GET | `/automation/logs?week_id=` | none | Returns `{ logs: [...] }`, every past `/automation/import` attempt (success or failure), newest first; optional `week_id` filter |
 
 `POST /automation/import` is the one place the `automation/` pipeline package
 (see `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section) talks to the

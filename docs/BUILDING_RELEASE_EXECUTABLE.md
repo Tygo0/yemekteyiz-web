@@ -68,15 +68,27 @@ that's its database.
 
 The executable itself should **not** be committed to git (it's ~50MB and
 regeneratable — `build/`, `dist/`, and `frontend_dist/` are gitignored).
-Instead, attach it directly to a GitHub Release as a binary asset:
 
-1. On GitHub: your repo → **Releases** → **Draft a new release** (or edit an
-   existing one).
-2. Under "Attach binaries," drag in `backend/dist/yemekteyiz-server`
-   (rename it first if you want, e.g. `yemekteyiz-server-linux`).
-3. If you also built Windows/macOS versions, attach those too, clearly
-   labeled (`yemekteyiz-server-windows.exe`, `yemekteyiz-server-macos`).
-4. Publish.
+**Automated (the normal path):** `.github/workflows/release.yml` builds both
+the Linux and Windows executables on real `ubuntu-latest`/`windows-latest`
+GitHub Actions runners (solving the no-cross-compiling problem above without
+needing two physical machines) and attaches them to a GitHub Release
+automatically. It runs in two ways:
+
+- **On tag push** — `git tag vX.Y.Z && git push origin vX.Y.Z` builds and
+  publishes a release for that tag automatically.
+- **On demand** — from the repo's **Actions** tab → **Release executables** →
+  **Run workflow**, entering an existing tag name, for building assets for a
+  tag that predates the workflow, or re-running a failed build.
+
+The `release` job (`softprops/action-gh-release@v2`) creates the GitHub
+Release if it doesn't exist yet and attaches `yemekteyiz-server-linux` and
+`yemekteyiz-server-windows.exe`.
+
+**Manual fallback**, if you ever need to attach a binary without going
+through CI (e.g. testing an unpushed local build): On GitHub, your repo →
+**Releases** → **Draft a new release** (or edit an existing one) → drag the
+file under "Attach binaries," or use `gh release upload <tag> <path-to-binary>`.
 
 Anyone visiting your repo can then go to **Releases**, download the file for
 their OS, and run it — no cloning, no installing dependencies.

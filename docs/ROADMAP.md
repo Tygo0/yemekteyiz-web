@@ -35,7 +35,10 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 - [x] Website fully usable with zero AI involvement (achieved in Phase 4: full CRUD + edit on every entity)
 - [x] Consolidated, clean-room-verified local setup guide (`docs/RUNNING_LOCALLY.md`) — caught and fixed 3 real bugs (bad default DB hostname, seed.py and wsgi.py both not loading .env, psycopg2 force-installed for the SQLite-only default path)
 - [x] Standalone single-file executable distribution (`docs/BUILDING_RELEASE_EXECUTABLE.md`) — no Python/Node required to run, single process serves both API and frontend, auto-migrates DB and seeds an admin on first launch. Verified end-to-end in complete isolation (binary copied to an empty folder, zero source code present).
-- [ ] Version tagged (`v0.1.0`) and published as a GitHub Release — final step, see instructions below
+- [x] Version tagged (`v0.1.0`, `v0.2.0`) and published as GitHub Releases, with
+  `.github/workflows/release.yml` now building Linux + Windows executables on
+  real CI runners (no cross-compiling) and attaching them automatically on
+  every tag push
 
 **Redefinition note:** originally scoped as "manual system complete," which Phase 4
 already satisfied. Docker/Kubernetes/cloud deployment were considered for this phase
@@ -45,19 +48,43 @@ Containerization may return as its own future phase once it can be tested for re
 Phase 5 is now scoped to exactly what was asked: a release someone else can clone and
 run locally, with documentation good enough that they don't need to ask questions.
 
-## Phase 6 — AI Automation
-- [ ] Video discovery (yt-dlp polling)
-- [ ] Download + media extraction (ffmpeg)
-- [ ] OCR pipeline
-- [ ] Whisper speech pipeline
-- [ ] Vision-LLM extraction
-- [ ] Data fusion + validation
-- [ ] Backend integration (`/api/automation/import`)
+## Phase 6 — AI Automation ✅ (mock-first pipeline built, one stage live-verified)
+Built mock-first per `docs/PHASE6_HANDOFF.md`: every stage has a clean
+interface (`automation/*/base.py`) with a mock implementation (synthetic
+data, no external deps) and a real one, wired together by `automation/pipeline.py`.
+- [x] Video discovery (`automation/downloader/ytdlp_downloader.py`,
+  `automation/scheduler/poller.py`) — real yt-dlp code written; not yet run
+  against a live YouTube channel
+- [x] Download + media extraction (`automation/extractor/ffmpeg_extractor.py`)
+  — real ffmpeg code written; not yet run against a real video
+- [x] OCR pipeline (`automation/ocr/easyocr_engine.py`, EasyOCR) — real code
+  written; not yet run against real frames
+- [x] Whisper speech pipeline (`automation/speech/whisper_engine.py`) — real
+  code written; not yet run against real audio
+- [x] Vision-LLM extraction (`automation/vision/gemini_vision.py`, **Gemini
+  2.5 Flash**) — **live-verified**: a real API call against a synthetic test
+  image correctly extracted contestant name, dish, and judge scores
+  (`automation/scripts/verify_gemini.py`, `automation/tests/test_gemini_smoke.py`)
+- [x] Data fusion + validation (`automation/parser/fusion.py`,
+  `automation/validator/rules.py`) — enforces all 6 blueprint rules
+  (week must exist, no duplicate contestants, scores 1–10, exactly four
+  contestants, all required fields, contestant/episode/score consistency)
+- [x] Backend integration (`POST /api/automation/import`) — implemented in
+  `backend/app/services/automation_service.py`, reuses existing
+  contestant/episode/dish/score services (no duplicated business logic, no
+  raw SQL from automation); real end-to-end test runs the full mock pipeline
+  against a live Flask backend over real HTTP
+
+Not yet done: real network run against an actual YouTube channel/video (only
+the Gemini vision stage has been confirmed against a live API so far), and
+the scheduler's video→week matching logic is left as an injected function
+since it depends on the actual channel's naming conventions.
 
 ## Phase 7 — Testing
-- [ ] Backend unit + integration tests
+- [x] Backend unit + integration tests — 32 passing (25 from Phases 1-5 + 7 for automation import)
 - [ ] Frontend tests
-- [ ] Automation pipeline tests
+- [x] Automation pipeline tests — 13 passing in `automation/tests/` (validator,
+  fusion, full mock-pipeline-to-live-backend e2e, Gemini smoke test)
 - [ ] Manual QA pass
 
 ## Phase 8 — Deployment

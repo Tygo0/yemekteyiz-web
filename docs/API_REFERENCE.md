@@ -88,13 +88,45 @@ Returns:
 }
 ```
 
-## Automation (stubbed — real pipeline is Phase 6)
+## Automation (Phase 6)
 
-| Method | Path | Auth | Current behavior |
-|--------|------|------|-------------------|
-| POST | `/automation/import` | required | Returns `501` placeholder |
-| GET | `/automation/status` | none | Returns `{ status: "idle" }` |
-| GET | `/automation/logs` | none | Returns `{ logs: [] }` |
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| POST | `/automation/import` | required | Imports one week's worth of AI-extracted data. See below. |
+| GET | `/automation/status` | none | Returns `{ status: "idle" }` — no background scheduler running yet |
+| GET | `/automation/logs` | none | Returns `{ logs: [] }` — structured import logging not yet implemented |
+
+`POST /automation/import` is the one place the `automation/` pipeline package
+(see `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section) talks to the
+backend — always over this REST endpoint, never direct SQL. It requires
+**exactly four contestants**, matches contestants by name against any already
+in the target week (rejecting duplicates), and requires the week to already
+exist (an admin creates it manually first).
+
+```json
+{
+  "week_id": 1,
+  "contestants": [
+    {
+      "name": "Ayşe",
+      "age": 30,
+      "profession": "Chef",
+      "city": "Istanbul",
+      "biography": "...",
+      "photo_url": "https://...",
+      "broadcast_date": "2026-01-05",
+      "video_url": "https://youtube.com/watch?v=...",
+      "dishes": [{ "name": "Mercimek Çorbası", "category": "soup" }],
+      "scores": [{ "judge_name": "Zuhal", "value": 8 }]
+    }
+  ]
+}
+```
+
+Returns `201` with the created contestant/episode/dish/score records, or
+`400`/`404`/`409` with a clear error if the week doesn't exist, a contestant
+already exists in that week, scores are out of range, or the contestant count
+isn't exactly four.
 
 ## Error shape
 

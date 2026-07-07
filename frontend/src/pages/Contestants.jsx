@@ -163,8 +163,9 @@ export default function Contestants() {
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Name</label>
+                    <label htmlFor={`edit-name-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">Name</label>
                     <input
+                      id={`edit-name-${c.id}`}
                       value={editForm.name}
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                       required
@@ -172,8 +173,9 @@ export default function Contestants() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Age</label>
+                    <label htmlFor={`edit-age-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">Age</label>
                     <input
+                      id={`edit-age-${c.id}`}
                       type="number"
                       value={editForm.age}
                       onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
@@ -181,32 +183,36 @@ export default function Contestants() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">City</label>
+                    <label htmlFor={`edit-city-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">City</label>
                     <input
+                      id={`edit-city-${c.id}`}
                       value={editForm.city}
                       onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
                       className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Profession</label>
+                    <label htmlFor={`edit-profession-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">Profession</label>
                     <input
+                      id={`edit-profession-${c.id}`}
                       value={editForm.profession}
                       onChange={(e) => setEditForm({ ...editForm, profession: e.target.value })}
                       className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Photo URL</label>
+                    <label htmlFor={`edit-photo-url-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">Photo URL</label>
                     <input
+                      id={`edit-photo-url-${c.id}`}
                       value={editForm.photo_url}
                       onChange={(e) => setEditForm({ ...editForm, photo_url: e.target.value })}
                       className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Biography</label>
+                    <label htmlFor={`edit-biography-${c.id}`} className="block text-xs font-medium text-ink/60 mb-1">Biography</label>
                     <textarea
+                      id={`edit-biography-${c.id}`}
                       value={editForm.biography}
                       onChange={(e) => setEditForm({ ...editForm, biography: e.target.value })}
                       rows={3}
@@ -276,8 +282,9 @@ export default function Contestants() {
           <form onSubmit={handleCreate} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Week</label>
+                <label htmlFor="create-week" className="block text-xs font-medium text-ink/60 mb-1">Week</label>
                 <select
+                  id="create-week"
                   value={form.week_id}
                   onChange={(e) => setForm({ ...form, week_id: e.target.value })}
                   required
@@ -291,8 +298,9 @@ export default function Contestants() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Name</label>
+                <label htmlFor="create-name" className="block text-xs font-medium text-ink/60 mb-1">Name</label>
                 <input
+                  id="create-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
@@ -300,8 +308,9 @@ export default function Contestants() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Age</label>
+                <label htmlFor="create-age" className="block text-xs font-medium text-ink/60 mb-1">Age</label>
                 <input
+                  id="create-age"
                   type="number"
                   value={form.age}
                   onChange={(e) => setForm({ ...form, age: e.target.value })}
@@ -309,32 +318,36 @@ export default function Contestants() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">City</label>
+                <label htmlFor="create-city" className="block text-xs font-medium text-ink/60 mb-1">City</label>
                 <input
+                  id="create-city"
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
                   className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Profession</label>
+                <label htmlFor="create-profession" className="block text-xs font-medium text-ink/60 mb-1">Profession</label>
                 <input
+                  id="create-profession"
                   value={form.profession}
                   onChange={(e) => setForm({ ...form, profession: e.target.value })}
                   className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Photo URL</label>
+                <label htmlFor="create-photo-url" className="block text-xs font-medium text-ink/60 mb-1">Photo URL</label>
                 <input
+                  id="create-photo-url"
                   value={form.photo_url}
                   onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
                   className="w-full rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-ink/60 mb-1">Biography</label>
+                <label htmlFor="create-biography" className="block text-xs font-medium text-ink/60 mb-1">Biography</label>
                 <textarea
+                  id="create-biography"
                   value={form.biography}
                   onChange={(e) => setForm({ ...form, biography: e.target.value })}
                   rows={2}

@@ -83,10 +83,10 @@ cp .env.example .env
 npm run dev                     # http://localhost:5173
 ```
 
-Run the backend test suite:
+Run the test suites:
 ```bash
-cd backend
-python3 -m pytest tests/ -v
+cd backend && python3 -m pytest tests/ -v
+cd frontend && npm test         # Vitest + React Testing Library
 ```
 
 **AI automation pipeline** (optional — the manual system above works fully without it):

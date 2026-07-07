@@ -83,7 +83,15 @@ since it depends on the actual channel's naming conventions.
 ## Phase 7 — Testing
 - [x] Backend unit + integration tests — 35 passing (25 from Phases 1-5 + 10 for
   automation import/logging + regression coverage for the dish-category bug below)
-- [ ] Frontend tests
+- [x] Frontend tests — Vitest + React Testing Library set up (`frontend/npm test`),
+  17 tests covering the core flows: auth (login success/failure, session
+  restore/expiry, logout), route protection (redirect when unauthenticated),
+  the Automation Logs page (status/log rendering, regression test that the
+  removed trigger-import button stays gone), and the Contestants CRUD page
+  (admin-only controls, create/delete). Found and fixed a real accessibility
+  bug along the way — Contestants' form labels had no `htmlFor`/`id`
+  association; the same pattern in Weeks/Episodes/Dishes/Scores is flagged
+  as a follow-up.
 - [x] Automation pipeline tests — 13 passing in `automation/tests/` (validator,
   fusion, full mock-pipeline-to-live-backend e2e, Gemini smoke test)
 - [x] Manual QA pass (first round) — found and fixed real bugs the automated

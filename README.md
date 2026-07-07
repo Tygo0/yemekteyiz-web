@@ -6,8 +6,14 @@ extracts structured contestant/score/dish data automatically.
 
 ## Project Status
 
-🚧 v0.1.0 — Full manual management system (backend + frontend), locally runnable.
-AI automation and containerized deployment are not built yet. See `docs/ROADMAP.md`.
+✅ Full manual management system (backend + frontend), locally runnable, released
+as standalone executables (Linux + Windows, auto-built by CI on every tag — see
+**Releases**). ✅ AI automation pipeline built mock-first per `docs/ARCHITECTURE.md`
+(downloader/extractor/ocr/vision/speech/parser/validator/api_client/scheduler),
+with the Gemini vision stage live-verified against the real API; the backend's
+`POST /api/automation/import` is real (no longer stubbed). Containerized
+deployment is not built yet. See `docs/ROADMAP.md` for the full phase-by-phase
+status.
 
 ## System Overview
 
@@ -34,7 +40,7 @@ React Frontend → REST API (HTTPS) → Flask Backend → SQLAlchemy → Postgre
 | Backend    | Python 3.13+, Flask, SQLAlchemy, Flask-Migrate (Alembic), Pydantic/Marshmallow, JWT, Gunicorn |
 | Frontend   | React, Vite, React Router, Axios, Material UI / Tailwind |
 | Database   | PostgreSQL |
-| Automation | yt-dlp, FFmpeg, PaddleOCR/EasyOCR, Whisper, Gemini/GPT-4.1 Vision, LangChain (optional) |
+| Automation | yt-dlp, FFmpeg, EasyOCR, Whisper, Gemini 2.5 Flash (vision) |
 | Deployment | Docker, Docker Compose *(planned — not yet implemented, see docs/ROADMAP.md)* |
 
 ## Repository Structure
@@ -43,7 +49,7 @@ React Frontend → REST API (HTTPS) → Flask Backend → SQLAlchemy → Postgre
 yemekteyiz/
 ├── backend/       # Flask REST API (clean architecture: routes → services → models)
 ├── frontend/      # React + Vite SPA
-├── automation/    # Independent AI pipeline, talks to backend only via HTTP (not yet built — see docs/ROADMAP.md)
+├── automation/    # Independent AI pipeline (mock-first: every stage has a real + a mock implementation), talks to backend only via HTTP
 └── docs/          # Architecture, ER diagram, API spec, roadmap, local setup guide
 ```
 
@@ -82,6 +88,20 @@ Run the backend test suite:
 cd backend
 python3 -m pytest tests/ -v
 ```
+
+**AI automation pipeline** (optional — the manual system above works fully without it):
+```bash
+cd automation
+pip install -r requirements.txt --break-system-packages
+cp .env.example .env            # fill in GEMINI_API_KEY + backend admin credentials
+python3 -m pytest tests/ -v     # mock-first: only test_gemini_smoke.py needs a real key
+
+# cli.py runs as a module from the repo root (needs the backend running):
+cd ..
+python3 -m automation.cli --video-url <url> --week-id <id> --mock   # dry run, synthetic data
+```
+See `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section and
+`docs/API_REFERENCE.md`'s Automation endpoints for the full picture.
 
 ## Engineering Principles
 

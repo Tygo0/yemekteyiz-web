@@ -81,11 +81,28 @@ the scheduler's video→week matching logic is left as an injected function
 since it depends on the actual channel's naming conventions.
 
 ## Phase 7 — Testing
-- [x] Backend unit + integration tests — 32 passing (25 from Phases 1-5 + 7 for automation import)
+- [x] Backend unit + integration tests — 35 passing (25 from Phases 1-5 + 10 for
+  automation import/logging + regression coverage for the dish-category bug below)
 - [ ] Frontend tests
 - [x] Automation pipeline tests — 13 passing in `automation/tests/` (validator,
   fusion, full mock-pipeline-to-live-backend e2e, Gemini smoke test)
-- [ ] Manual QA pass
+- [x] Manual QA pass (first round) — found and fixed real bugs the automated
+  tests hadn't caught:
+  - `POST /api/automation/import` had no persisted logging; `GET /automation/logs`
+    always returned an empty list regardless of what happened — implemented real
+    `AutomationImportLog` persistence.
+  - The frontend's "Trigger Import" button always 400'd — a Phase 3-era leftover
+    that POSTed with no body, fine for the old 501 stub but not for the now-real
+    endpoint. Removed it; the Automation Logs page is read-only (status + real
+    log history) since real imports are triggered by running the pipeline
+    itself, not by clicking a button with no input.
+  - `Dish.category` serialized as Python's enum repr (`"DishCategory.SOUP"`)
+    instead of its plain value (`"soup"`) — a pre-existing bug in `DishSchema`,
+    not caught before since no test checked the round-tripped value.
+  - CSS `text-transform: uppercase` is locale-sensitive, and this site declares
+    `<html lang="tr">` — labels containing "i" (e.g. "Highest score ever")
+    rendered with a Turkish dotted İ for every visitor. Fixed on the Automation
+    Logs, Dashboard, and Statistics pages.
 
 ## Phase 8 — Deployment
 - [ ] docker-compose.yml (frontend, backend, postgres, automation)

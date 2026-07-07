@@ -104,8 +104,9 @@ export default function Episodes() {
                 className="flex flex-wrap items-end gap-3 px-5 py-3"
               >
                 <div>
-                  <label className="block text-xs font-medium text-ink/60 mb-1">Broadcast date</label>
+                  <label htmlFor={`edit-broadcast-date-${e.id}`} className="block text-xs font-medium text-ink/60 mb-1">Broadcast date</label>
                   <input
+                    id={`edit-broadcast-date-${e.id}`}
                     type="date"
                     value={editForm.broadcast_date}
                     onChange={(ev) => setEditForm({ ...editForm, broadcast_date: ev.target.value })}
@@ -113,8 +114,9 @@ export default function Episodes() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink/60 mb-1">Video URL</label>
+                  <label htmlFor={`edit-video-url-${e.id}`} className="block text-xs font-medium text-ink/60 mb-1">Video URL</label>
                   <input
+                    id={`edit-video-url-${e.id}`}
                     value={editForm.video_url}
                     onChange={(ev) => setEditForm({ ...editForm, video_url: ev.target.value })}
                     className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm w-64"
@@ -180,8 +182,9 @@ export default function Episodes() {
           <h2 className="font-display text-lg font-semibold text-ink mb-3">Add an episode</h2>
           <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Contestant</label>
+              <label htmlFor="create-contestant" className="block text-xs font-medium text-ink/60 mb-1">Contestant</label>
               <select
+                id="create-contestant"
                 value={form.contestant_id}
                 onChange={(e) => setForm({ ...form, contestant_id: e.target.value })}
                 required
@@ -195,8 +198,9 @@ export default function Episodes() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Broadcast date</label>
+              <label htmlFor="create-broadcast-date" className="block text-xs font-medium text-ink/60 mb-1">Broadcast date</label>
               <input
+                id="create-broadcast-date"
                 type="date"
                 value={form.broadcast_date}
                 onChange={(e) => setForm({ ...form, broadcast_date: e.target.value })}
@@ -204,8 +208,9 @@ export default function Episodes() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Video URL</label>
+              <label htmlFor="create-video-url" className="block text-xs font-medium text-ink/60 mb-1">Video URL</label>
               <input
+                id="create-video-url"
                 value={form.video_url}
                 onChange={(e) => setForm({ ...form, video_url: e.target.value })}
                 className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm w-64"

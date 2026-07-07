@@ -170,8 +170,9 @@ export default function Weeks() {
               >
                 <div className="flex flex-wrap items-end gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Week #</label>
+                    <label htmlFor={`edit-week-number-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Week #</label>
                     <input
+                      id={`edit-week-number-${w.id}`}
                       type="number"
                       min="1"
                       value={weekEditForm.week_number}
@@ -183,8 +184,9 @@ export default function Weeks() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Air date</label>
+                    <label htmlFor={`edit-air-date-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Air date</label>
                     <input
+                      id={`edit-air-date-${w.id}`}
                       type="date"
                       value={weekEditForm.air_date}
                       onChange={(e) =>
@@ -194,8 +196,9 @@ export default function Weeks() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">YouTube URL</label>
+                    <label htmlFor={`edit-youtube-url-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">YouTube URL</label>
                     <input
+                      id={`edit-youtube-url-${w.id}`}
                       value={weekEditForm.youtube_url}
                       onChange={(e) =>
                         setWeekEditForm({ ...weekEditForm, youtube_url: e.target.value })
@@ -204,8 +207,9 @@ export default function Weeks() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-ink/60 mb-1">Winner</label>
+                    <label htmlFor={`edit-winner-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Winner</label>
                     <select
+                      id={`edit-winner-${w.id}`}
                       value={weekEditForm.winner_id}
                       onChange={(e) =>
                         setWeekEditForm({ ...weekEditForm, winner_id: e.target.value })
@@ -222,8 +226,9 @@ export default function Weeks() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink/60 mb-1">Notes</label>
+                  <label htmlFor={`edit-notes-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Notes</label>
                   <textarea
+                    id={`edit-notes-${w.id}`}
                     value={weekEditForm.notes}
                     onChange={(e) => setWeekEditForm({ ...weekEditForm, notes: e.target.value })}
                     rows={2}
@@ -348,8 +353,9 @@ export default function Weeks() {
             {seasonEditError && <ErrorState message={seasonEditError} />}
             <form onSubmit={handleCreateSeason} className="flex flex-wrap items-end gap-3 border-t-2 border-ink/10 pt-4">
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">New season name</label>
+                <label htmlFor="create-season-name" className="block text-xs font-medium text-ink/60 mb-1">New season name</label>
                 <input
+                  id="create-season-name"
                   value={newSeasonName}
                   onChange={(e) => setNewSeasonName(e.target.value)}
                   required
@@ -358,8 +364,9 @@ export default function Weeks() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Year</label>
+                <label htmlFor="create-season-year" className="block text-xs font-medium text-ink/60 mb-1">Year</label>
                 <input
+                  id="create-season-year"
                   type="number"
                   value={newSeasonYear}
                   onChange={(e) => setNewSeasonYear(e.target.value)}
@@ -380,8 +387,9 @@ export default function Weeks() {
             <h2 className="font-display text-lg font-semibold text-ink mb-3">Add a week</h2>
             <form onSubmit={handleCreateWeek} className="flex flex-wrap items-end gap-3">
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Season</label>
+                <label htmlFor="create-week-season" className="block text-xs font-medium text-ink/60 mb-1">Season</label>
                 <select
+                  id="create-week-season"
                   value={form.season_id}
                   onChange={(e) => setForm({ ...form, season_id: e.target.value })}
                   required
@@ -395,8 +403,9 @@ export default function Weeks() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">Week #</label>
+                <label htmlFor="create-week-number" className="block text-xs font-medium text-ink/60 mb-1">Week #</label>
                 <input
+                  id="create-week-number"
                   type="number"
                   min="1"
                   value={form.week_number}
@@ -406,8 +415,9 @@ export default function Weeks() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink/60 mb-1">YouTube URL</label>
+                <label htmlFor="create-week-youtube-url" className="block text-xs font-medium text-ink/60 mb-1">YouTube URL</label>
                 <input
+                  id="create-week-youtube-url"
                   value={form.youtube_url}
                   onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
                   className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm w-64"

@@ -116,8 +116,9 @@ export default function Dishes() {
                 className="flex flex-wrap items-end gap-3 px-5 py-3"
               >
                 <div>
-                  <label className="block text-xs font-medium text-ink/60 mb-1">Dish name</label>
+                  <label htmlFor={`edit-dish-name-${d.id}`} className="block text-xs font-medium text-ink/60 mb-1">Dish name</label>
                   <input
+                    id={`edit-dish-name-${d.id}`}
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                     required
@@ -125,8 +126,9 @@ export default function Dishes() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink/60 mb-1">Category</label>
+                  <label htmlFor={`edit-category-${d.id}`} className="block text-xs font-medium text-ink/60 mb-1">Category</label>
                   <select
+                    id={`edit-category-${d.id}`}
                     value={editForm.category}
                     onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                     className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
@@ -188,8 +190,9 @@ export default function Dishes() {
           <h2 className="font-display text-lg font-semibold text-ink mb-3">Add a dish</h2>
           <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Episode</label>
+              <label htmlFor="create-episode" className="block text-xs font-medium text-ink/60 mb-1">Episode</label>
               <select
+                id="create-episode"
                 value={form.episode_id}
                 onChange={(e) => setForm({ ...form, episode_id: e.target.value })}
                 required
@@ -203,8 +206,9 @@ export default function Dishes() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Dish name</label>
+              <label htmlFor="create-dish-name" className="block text-xs font-medium text-ink/60 mb-1">Dish name</label>
               <input
+                id="create-dish-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
@@ -212,8 +216,9 @@ export default function Dishes() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Category</label>
+              <label htmlFor="create-category" className="block text-xs font-medium text-ink/60 mb-1">Category</label>
               <select
+                id="create-category"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"

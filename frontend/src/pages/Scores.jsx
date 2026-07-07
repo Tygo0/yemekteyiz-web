@@ -184,8 +184,9 @@ export default function Scores() {
           <h2 className="font-display text-lg font-semibold text-ink mb-3">Add a score</h2>
           <form onSubmit={handleCreate} className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Episode</label>
+              <label htmlFor="create-score-episode" className="block text-xs font-medium text-ink/60 mb-1">Episode</label>
               <select
+                id="create-score-episode"
                 value={form.episode_id}
                 onChange={(e) => setForm({ ...form, episode_id: e.target.value })}
                 required
@@ -199,8 +200,9 @@ export default function Scores() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Judge</label>
+              <label htmlFor="create-judge-name" className="block text-xs font-medium text-ink/60 mb-1">Judge</label>
               <input
+                id="create-judge-name"
                 value={form.judge_name}
                 onChange={(e) => setForm({ ...form, judge_name: e.target.value })}
                 placeholder="Zuhal"
@@ -209,8 +211,9 @@ export default function Scores() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink/60 mb-1">Score (1-10)</label>
+              <label htmlFor="create-score-value" className="block text-xs font-medium text-ink/60 mb-1">Score (1-10)</label>
               <input
+                id="create-score-value"
                 type="number"
                 min="1"
                 max="10"

@@ -146,9 +146,17 @@ payloads are logged and never sent to the database.
 
 ## 7. Deployment
 
-`docker-compose.yml` services: `frontend`, `backend`, `postgres`, `automation`.
-Volumes: `database`, `logs`, `uploads`. All services share an internal bridge network;
-only `frontend` and `backend` are exposed externally.
+`docker-compose.yml` services: `frontend`, `backend`, `postgres` — verified
+end-to-end with real Docker (build, migrate, seed, login, CRUD, restart
+persistence). `automation` is deliberately NOT containerized here: it needs a
+real `GEMINI_API_KEY` and heavy model downloads that don't fit a generic
+`docker compose up`, so it stays a separately-run process that talks to the
+backend over the same published port, exactly as it does against a local dev
+server today. See `docs/DEPLOYMENT.md` for the full guide.
+
+Postgres has no published host port (internal-only, reached by the backend
+container via Docker's service DNS); frontend and backend are both exposed
+externally, matching the original plan.
 
 ## 8. Engineering Principles
 

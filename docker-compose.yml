@@ -1,0 +1,44 @@
+# Per docs/ARCHITECTURE.md's Deployment section: frontend + backend are both
+# exposed externally, postgres is internal-only. The automation/ pipeline is
+# NOT containerized here — it's a separately-run process (needs a real
+# GEMINI_API_KEY + heavy model downloads that don't fit a generic `up`) that
+# talks to the backend over this same published port, exactly like it does
+# against a local dev server today.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-yemekteyiz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-yemekteyiz}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yemekteyiz}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-yemekteyiz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-yemekteyiz}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
+      FLASK_ENV: production
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres-data:

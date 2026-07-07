@@ -2,12 +2,12 @@
 
 Tracks progress against the blueprint. Check items off as they land on `develop`.
 
-## Phase 1 — Planning ✅ (in progress)
+## Phase 1 — Planning ✅
 - [x] Repository created
 - [x] Folder structure (backend / frontend / automation / docs)
 - [x] README, ARCHITECTURE.md, ROADMAP.md
-- [ ] Branch strategy set up (main / develop / feature/*)
-- [ ] LICENSE decided
+- [x] Branch strategy set up (main / develop / feature/*)
+- [x] LICENSE decided (MIT)
 
 ## Phase 2 — Database Design ✅
 - [x] ER diagram finalized (`docs/er-diagram.md`)
@@ -42,11 +42,11 @@ Tracks progress against the blueprint. Check items off as they land on `develop`
 
 **Redefinition note:** originally scoped as "manual system complete," which Phase 4
 already satisfied. Docker/Kubernetes/cloud deployment were considered for this phase
-but explicitly descoped — this sandbox has no Docker available to verify container
+but explicitly descoped at the time — no Docker was available to verify container
 config, and shipping unverified Docker files in a release was judged too risky.
-Containerization may return as its own future phase once it can be tested for real.
-Phase 5 is now scoped to exactly what was asked: a release someone else can clone and
+Phase 5 was rescoped to exactly what was asked: a release someone else can clone and
 run locally, with documentation good enough that they don't need to ask questions.
+Containerization returned as Phase 8 once it could actually be tested — see below.
 
 ## Phase 6 — AI Automation ✅ (mock-first pipeline built, one stage live-verified)
 Built mock-first per `docs/PHASE6_HANDOFF.md`: every stage has a clean
@@ -80,7 +80,7 @@ the Gemini vision stage has been confirmed against a live API so far), and
 the scheduler's video→week matching logic is left as an injected function
 since it depends on the actual channel's naming conventions.
 
-## Phase 7 — Testing
+## Phase 7 — Testing ✅
 - [x] Backend unit + integration tests — 35 passing (25 from Phases 1-5 + 10 for
   automation import/logging + regression coverage for the dish-category bug below)
 - [x] Frontend tests — Vitest + React Testing Library set up (`frontend/npm test`),
@@ -112,7 +112,22 @@ since it depends on the actual channel's naming conventions.
     rendered with a Turkish dotted İ for every visitor. Fixed on the Automation
     Logs, Dashboard, and Statistics pages.
 
-## Phase 8 — Deployment
-- [ ] docker-compose.yml (frontend, backend, postgres, automation)
-- [ ] Production env config
-- [ ] Final README + docs pass
+## Phase 8 — Deployment ✅
+- [x] docker-compose.yml (frontend, backend, postgres) — `automation` is
+  deliberately excluded (needs a real `GEMINI_API_KEY` + heavy model
+  downloads that don't fit a generic `up`; stays a separately-run process
+  per the Phase 6 design). Frontend's nginx reverse-proxies `/api` to the
+  backend container over Docker's internal DNS — same-origin, no CORS
+  config needed, matching the same pattern `build_executable.py` already
+  used for the standalone executable.
+- [x] Production env config — root `.env.example` for Compose variable
+  substitution (Postgres creds, `JWT_SECRET_KEY`, optional admin seed).
+- [x] Final README + docs pass — `docs/DEPLOYMENT.md` (new), README's
+  Project Status/Tech Stack/Repository Structure updated, `docs/ARCHITECTURE.md`'s
+  Deployment section corrected to match what was actually built.
+
+Verified end-to-end on real Docker (Docker Desktop + WSL2, not guessed):
+built all three images, ran migrations against real Postgres, seeded an
+admin, logged in and did a full create/read round-trip through the
+frontend's nginx proxy, and confirmed data survives a container restart
+(idempotent migrations + admin seed).

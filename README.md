@@ -11,9 +11,10 @@ as standalone executables (Linux + Windows, auto-built by CI on every tag — se
 **Releases**). ✅ AI automation pipeline built mock-first per `docs/ARCHITECTURE.md`
 (downloader/extractor/ocr/vision/speech/parser/validator/api_client/scheduler),
 with the Gemini vision stage live-verified against the real API; the backend's
-`POST /api/automation/import` is real (no longer stubbed). Containerized
-deployment is not built yet. See `docs/ROADMAP.md` for the full phase-by-phase
-status.
+`POST /api/automation/import` is real (no longer stubbed). ✅ Containerized
+deployment (`docker-compose.yml`: frontend + backend + Postgres) verified
+end-to-end on real Docker — see `docs/DEPLOYMENT.md`. See `docs/ROADMAP.md`
+for the full phase-by-phase status.
 
 ## System Overview
 
@@ -41,15 +42,17 @@ React Frontend → REST API (HTTPS) → Flask Backend → SQLAlchemy → Postgre
 | Frontend   | React, Vite, React Router, Axios, Material UI / Tailwind |
 | Database   | PostgreSQL |
 | Automation | yt-dlp, FFmpeg, EasyOCR, Whisper, Gemini 2.5 Flash (vision) |
-| Deployment | Docker, Docker Compose *(planned — not yet implemented, see docs/ROADMAP.md)* |
+| Deployment | Docker, Docker Compose (frontend + backend + Postgres — see docs/DEPLOYMENT.md) |
 
 ## Repository Structure
 
 ```
 yemekteyiz/
 ├── backend/       # Flask REST API (clean architecture: routes → services → models)
-├── frontend/      # React + Vite SPA
+│                  #   + Dockerfile / docker-entrypoint.sh
+├── frontend/      # React + Vite SPA + Dockerfile / nginx.conf (reverse-proxies /api)
 ├── automation/    # Independent AI pipeline (mock-first: every stage has a real + a mock implementation), talks to backend only via HTTP
+├── docker-compose.yml   # frontend + backend + Postgres — see docs/DEPLOYMENT.md
 └── docs/          # Architecture, ER diagram, API spec, roadmap, local setup guide
 ```
 
@@ -102,6 +105,21 @@ python3 -m automation.cli --video-url <url> --week-id <id> --mock   # dry run, s
 ```
 See `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section and
 `docs/API_REFERENCE.md`'s Automation endpoints for the full picture.
+
+## Deploying with Docker
+
+A third option, for running this as a real service (Postgres instead of
+SQLite, independently restartable containers) rather than developing or
+running a single local copy:
+
+```bash
+cp .env.example .env    # then edit JWT_SECRET_KEY + POSTGRES_PASSWORD
+docker compose up --build -d
+```
+
+Frontend at http://localhost:8080, backend API at http://localhost:5000.
+Full guide, including how the pieces connect and production notes (secrets,
+TLS, backups): **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
 
 ## Engineering Principles
 

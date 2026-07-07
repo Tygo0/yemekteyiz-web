@@ -39,6 +39,7 @@ logs/
 
 # Personal meeting-prep notes — kept locally, not published to GitHub
 docs/PHASE*_CONCEPTS.md
+docs/PHASE6_HANDOFF.md
 
 # Backend runtime
 backend/instance/

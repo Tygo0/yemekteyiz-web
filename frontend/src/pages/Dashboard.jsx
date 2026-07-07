@@ -38,8 +38,8 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-5">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-3">
-            Highest score ever
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
+            HIGHEST SCORE EVER
           </p>
           {stats.highest_score_ever ? (
             <div className="flex items-center gap-3">
@@ -55,8 +55,8 @@ export default function Dashboard() {
         </div>
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-5">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-3">
-            Most successful contestant
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
+            MOST SUCCESSFUL CONTESTANT
           </p>
           {stats.most_successful_contestant ? (
             <div>
@@ -73,8 +73,8 @@ export default function Dashboard() {
         </div>
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-5">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-3">
-            Most common dish
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
+            MOST COMMON DISH
           </p>
           {stats.most_common_dish ? (
             <div>

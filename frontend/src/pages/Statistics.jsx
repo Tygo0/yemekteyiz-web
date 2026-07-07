@@ -28,8 +28,8 @@ export default function Statistics() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-4">
-            Highest score ever
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-4">
+            HIGHEST SCORE EVER
           </p>
           {stats.highest_score_ever ? (
             <div className="flex items-center gap-4">
@@ -47,8 +47,8 @@ export default function Statistics() {
         </div>
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-4">
-            Overall average score
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-4">
+            OVERALL AVERAGE SCORE
           </p>
           {stats.average_score !== null ? (
             <ScorePaddle value={stats.average_score} size="lg" />
@@ -58,8 +58,8 @@ export default function Statistics() {
         </div>
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-3">
-            Most successful contestant
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
+            MOST SUCCESSFUL CONTESTANT
           </p>
           {stats.most_successful_contestant ? (
             <div>
@@ -76,8 +76,8 @@ export default function Statistics() {
         </div>
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6">
-          <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-3">
-            Most common dish
+          <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
+            MOST COMMON DISH
           </p>
           {stats.most_common_dish ? (
             <div>
@@ -93,8 +93,8 @@ export default function Statistics() {
       </div>
 
       <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6 mb-10">
-        <p className="text-xs font-medium text-ink/50 uppercase tracking-wide mb-4">
-          Score distribution
+        <p className="text-xs font-medium text-ink/50 tracking-wide mb-4">
+          SCORE DISTRIBUTION
         </p>
         <div className="flex items-end gap-2 h-32">
           {Object.entries(stats.score_distribution).map(([value, count]) => (

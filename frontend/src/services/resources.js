@@ -30,5 +30,4 @@ export const statisticsService = {
 export const automationService = {
   status: () => api.get('/automation/status').then((r) => r.data),
   logs: () => api.get('/automation/logs').then((r) => r.data),
-  triggerImport: () => api.post('/automation/import').then((r) => r.data),
 }

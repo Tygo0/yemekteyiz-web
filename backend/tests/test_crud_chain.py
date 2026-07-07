@@ -48,6 +48,12 @@ def test_full_chain_create_and_read(client, auth_headers):
         headers=auth_headers,
     )
     assert dish_resp.status_code == 201
+    # Regression: category is stored as a DishCategory enum, so dumping it
+    # must return the plain value ("soup"), not Python's enum repr
+    # ("DishCategory.SOUP").
+    assert dish_resp.get_json()["category"] == "soup"
+    dish_id = dish_resp.get_json()["id"]
+    assert client.get(f"/api/dishes/{dish_id}").get_json()["category"] == "soup"
 
     score_resp = client.post(
         "/api/scores",

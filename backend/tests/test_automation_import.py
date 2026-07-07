@@ -48,6 +48,7 @@ def test_import_full_week_creates_everything(client, auth_headers):
     entry = body["contestants"][0]
     assert entry["contestant"]["name"] == "Ayşe"
     assert len(entry["dishes"]) == 1
+    assert entry["dishes"][0]["category"] == "soup"
     assert len(entry["scores"]) == 1
 
     assert len(client.get(f"/api/contestants?week_id={week_id}").get_json()) == 4

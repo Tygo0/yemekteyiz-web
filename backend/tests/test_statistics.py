@@ -86,3 +86,32 @@ def test_statistics_values(client, auth_headers):
     weekly_avgs = stats["average_weekly_score"]
     assert len(weekly_avgs) == 1
     assert weekly_avgs[0]["average_score"] == 7.75
+
+
+def test_vote_matrix_is_public(client, auth_headers):
+    ids = _build_scored_week(client, auth_headers)
+    resp = client.get(f"/api/statistics/vote-matrix/{ids['week_id']}")
+    assert resp.status_code == 200
+
+
+def test_vote_matrix_values(client, auth_headers):
+    ids = _build_scored_week(client, auth_headers)
+    matrix = client.get(f"/api/statistics/vote-matrix/{ids['week_id']}").get_json()
+
+    assert matrix["week_id"] == ids["week_id"]
+    assert [c["name"] for c in matrix["contestants"]] == ["Ayşe", "Mehmet"]
+    # Judges = every distinct judge_name that actually scored this week —
+    # including contestants who scored each other (Ayşe scored Mehmet,
+    # Mehmet scored Ayşe), not a hardcoded "host" column.
+    assert matrix["judges"] == ["Ayşe", "Mehmet", "Zuhal"]
+
+    row_c1 = matrix["matrix"][str(ids["c1"])]
+    assert row_c1 == {"Zuhal": 10, "Mehmet": 8}
+
+    row_c2 = matrix["matrix"][str(ids["c2"])]
+    assert row_c2 == {"Zuhal": 6, "Ayşe": 7}
+
+
+def test_vote_matrix_404_for_nonexistent_week(client):
+    resp = client.get("/api/statistics/vote-matrix/999")
+    assert resp.status_code == 404

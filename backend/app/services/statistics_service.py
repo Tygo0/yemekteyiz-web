@@ -1,6 +1,7 @@
 from sqlalchemy import func
 from app.extensions import db
 from app.models import Week, Contestant, Episode, Dish, Score
+from app.services import week_service
 
 
 def weekly_winners():
@@ -117,6 +118,43 @@ def score_distribution():
     for value, count in rows:
         counts[str(value)] = count
     return counts
+
+
+def vote_matrix(week_id):
+    """
+    Who gave points to whom, for one week. Rows are that week's contestants;
+    columns are every distinct judge who actually scored that week — whether
+    that's named external judges (e.g. the host), contestants scoring each
+    other (a Score whose judge_name happens to match one of that week's
+    contestants), or both. No column is hardcoded, since which judges exist
+    varies by week/season rather than being a fixed roster.
+    """
+    week_service.get_week(week_id)  # raises NotFoundError if the week doesn't exist
+
+    contestants = Contestant.query.filter_by(week_id=week_id).order_by(Contestant.id).all()
+    contestant_ids = [c.id for c in contestants]
+
+    scores = (
+        db.session.query(Score)
+        .join(Episode, Score.episode_id == Episode.id)
+        .filter(Episode.contestant_id.in_(contestant_ids))
+        .all()
+        if contestant_ids
+        else []
+    )
+
+    judges = sorted({s.judge_name for s in scores})
+
+    matrix = {str(c.id): {} for c in contestants}
+    for s in scores:
+        matrix[str(s.contestant_id)][s.judge_name] = s.value
+
+    return {
+        "week_id": week_id,
+        "contestants": [{"id": c.id, "name": c.name} for c in contestants],
+        "judges": judges,
+        "matrix": matrix,
+    }
 
 
 def get_all_statistics():

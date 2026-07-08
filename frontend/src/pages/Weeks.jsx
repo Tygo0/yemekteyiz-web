@@ -77,6 +77,16 @@ export default function Weeks() {
     }
   }
 
+  async function handleDeleteSeason(id) {
+    if (!confirm('Delete this season and all its weeks, contestants, episodes, dishes, and scores?')) return
+    try {
+      await seasonService.remove(id)
+      loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   async function handleCreateWeek(e) {
     e.preventDefault()
     setFormError(null)
@@ -278,6 +288,7 @@ export default function Weeks() {
                     </button>
                     <button
                       onClick={() => handleDelete(w.id)}
+                      aria-label={`Delete week ${w.week_number}`}
                       className="text-sm text-brick font-medium hover:underline"
                     >
                       Delete
@@ -339,12 +350,21 @@ export default function Weeks() {
                       <span className="text-ink/80">
                         {s.name} ({s.year})
                       </span>
-                      <button
-                        onClick={() => startEditSeason(s)}
-                        className="text-teal font-medium hover:underline"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => startEditSeason(s)}
+                          className="text-teal font-medium hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSeason(s.id)}
+                          aria-label={`Delete season ${s.name}`}
+                          className="text-brick font-medium hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ),
                 )}

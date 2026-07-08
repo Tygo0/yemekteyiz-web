@@ -25,6 +25,7 @@ export const scoreService = createResourceService('/scores')
 
 export const statisticsService = {
   get: () => api.get('/statistics').then((r) => r.data),
+  voteMatrix: (weekId) => api.get(`/statistics/vote-matrix/${weekId}`).then((r) => r.data),
 }
 
 export const automationService = {

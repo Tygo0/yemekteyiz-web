@@ -167,3 +167,21 @@ def test_delete_week_cascades_to_contestants(client, auth_headers):
     resp = client.delete(f"/api/weeks/{week_id}", headers=auth_headers)
     assert resp.status_code == 204
     assert client.get(f"/api/contestants/{contestant_id}").status_code == 404
+
+
+def test_delete_season_cascades_to_weeks_and_contestants(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    week_id = _create_week(client, auth_headers, season_id)
+    contestant_id = _create_contestant(client, auth_headers, week_id)
+
+    resp = client.delete(f"/api/seasons/{season_id}", headers=auth_headers)
+    assert resp.status_code == 204
+    assert client.get(f"/api/seasons/{season_id}").status_code == 404
+    assert client.get(f"/api/weeks/{week_id}").status_code == 404
+    assert client.get(f"/api/contestants/{contestant_id}").status_code == 404
+
+
+def test_delete_season_requires_auth(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    resp = client.delete(f"/api/seasons/{season_id}")
+    assert resp.status_code == 401

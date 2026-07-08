@@ -22,6 +22,8 @@ Authorization: Bearer <jwt-access-token>
 | GET | `/seasons` | none |
 | GET | `/seasons/{id}` | none |
 | POST | `/seasons` | required |
+| PUT | `/seasons/{id}` | required |
+| DELETE | `/seasons/{id}` | required — cascades to its weeks, contestants, episodes, dishes, scores |
 
 ## Weeks
 
@@ -74,6 +76,7 @@ Authorization: Bearer <jwt-access-token>
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/statistics` | none |
+| GET | `/statistics/vote-matrix/{week_id}` | none |
 
 Returns:
 ```json
@@ -87,6 +90,25 @@ Returns:
   "score_distribution": { "1": 0, "2": 0, "...": "...", "10": 1 }
 }
 ```
+
+`GET /statistics/vote-matrix/{week_id}` returns who gave points to whom for one
+week — rows are that week's contestants; columns are every distinct judge who
+actually scored that week (named judges like a host, and/or contestants who
+scored each other — whichever judge_names actually appear in that week's
+scores, not a fixed roster):
+```json
+{
+  "week_id": 1,
+  "contestants": [{ "id": 3, "name": "Ayşe" }, { "id": 4, "name": "Mehmet" }],
+  "judges": ["Ayşe", "Mehmet", "Zuhal"],
+  "matrix": {
+    "3": { "Zuhal": 9, "Mehmet": 7 },
+    "4": { "Zuhal": 8, "Ayşe": 6 }
+  }
+}
+```
+A contestant's own column is naturally absent from their row (nobody scores
+themselves) — the frontend renders that cell as `—`.
 
 ## Automation (Phase 6)
 

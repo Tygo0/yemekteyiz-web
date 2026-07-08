@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { statisticsService } from '../services/resources'
-import { LoadingState, ErrorState } from '../components/StatusStates'
+import { statisticsService, weekService } from '../services/resources'
+import { LoadingState, ErrorState, EmptyState } from '../components/StatusStates'
 import ScorePaddle from '../components/ScorePaddle'
 
 export default function Statistics() {
@@ -8,13 +8,33 @@ export default function Statistics() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const [weeks, setWeeks] = useState([])
+  const [selectedWeekId, setSelectedWeekId] = useState('')
+  const [voteMatrix, setVoteMatrix] = useState(null)
+  const [voteMatrixError, setVoteMatrixError] = useState(null)
+  const [voteMatrixLoading, setVoteMatrixLoading] = useState(false)
+
   useEffect(() => {
-    statisticsService
-      .get()
-      .then(setStats)
+    Promise.all([statisticsService.get(), weekService.list()])
+      .then(([s, w]) => {
+        setStats(s)
+        setWeeks(w)
+        setSelectedWeekId((id) => id || w[w.length - 1]?.id || '')
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!selectedWeekId) return
+    setVoteMatrixLoading(true)
+    setVoteMatrixError(null)
+    statisticsService
+      .voteMatrix(selectedWeekId)
+      .then(setVoteMatrix)
+      .catch((err) => setVoteMatrixError(err.message))
+      .finally(() => setVoteMatrixLoading(false))
+  }, [selectedWeekId])
 
   if (loading) return <LoadingState label="Crunching the numbers…" />
   if (error) return <ErrorState message={error} />
@@ -108,6 +128,64 @@ export default function Statistics() {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6 mb-10">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <p className="text-xs font-medium text-ink/50 tracking-wide">VOTE MATRIX</p>
+          <div>
+            <label htmlFor="vote-matrix-week" className="sr-only">Week</label>
+            <select
+              id="vote-matrix-week"
+              value={selectedWeekId}
+              onChange={(e) => setSelectedWeekId(e.target.value)}
+              className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
+            >
+              {weeks.map((w) => (
+                <option key={w.id} value={w.id}>
+                  Week {w.week_number}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {weeks.length === 0 ? (
+          <EmptyState title="No weeks yet" hint="Add a week first to see who scored whom." />
+        ) : voteMatrixLoading || !voteMatrix ? (
+          <LoadingState label="Loading vote matrix…" />
+        ) : voteMatrixError ? (
+          <ErrorState message={voteMatrixError} />
+        ) : voteMatrix.contestants.length === 0 ? (
+          <EmptyState title="No contestants for this week yet" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left p-2"></th>
+                  {voteMatrix.judges.map((judge) => (
+                    <th key={judge} className="text-center p-2 font-medium text-ink/60 whitespace-nowrap">
+                      {judge}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {voteMatrix.contestants.map((c) => (
+                  <tr key={c.id} className="border-t-2 border-ink/10">
+                    <td className="p-2 font-medium text-ink whitespace-nowrap">{c.name}</td>
+                    {voteMatrix.judges.map((judge) => (
+                      <td key={judge} className="text-center p-2 font-mono">
+                        {voteMatrix.matrix[c.id]?.[judge] ?? '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

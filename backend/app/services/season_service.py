@@ -27,3 +27,9 @@ def update_season(season_id, data):
         setattr(season, key, value)
     db.session.commit()
     return season
+
+
+def delete_season(season_id):
+    season = get_season(season_id)
+    db.session.delete(season)
+    db.session.commit()

@@ -16,6 +16,7 @@ vi.mock('../services/resources', () => ({
     list: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    remove: vi.fn(),
   },
   contestantService: {
     list: vi.fn(),
@@ -54,7 +55,8 @@ describe('Weeks', () => {
 
     expect(await screen.findByText(/Season 1 — Week 15/i)).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /edit/i }).length).toBeGreaterThan(0)
-    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /delete week/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /delete season/i })).toBeInTheDocument()
     expect(screen.getByText(/add a week/i)).toBeInTheDocument()
   })
 
@@ -84,8 +86,20 @@ describe('Weeks', () => {
     renderWithRouter(<Weeks />)
 
     await screen.findByText(/Season 1 — Week 15/i)
-    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
+    await userEvent.click(screen.getByRole('button', { name: /delete week/i }))
 
     await waitFor(() => expect(weekService.remove).toHaveBeenCalledWith(1))
+  })
+
+  it('deletes a season after confirmation', async () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true })
+    seasonService.remove.mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    renderWithRouter(<Weeks />)
+
+    await screen.findByText(/Season 1 — Week 15/i)
+    await userEvent.click(screen.getByRole('button', { name: /delete season/i }))
+
+    await waitFor(() => expect(seasonService.remove).toHaveBeenCalledWith(1))
   })
 })

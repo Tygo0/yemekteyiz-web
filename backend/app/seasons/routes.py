@@ -34,3 +34,10 @@ def update_season(season_id):
     data = update_schema.load(request.get_json(force=True) or {}, partial=True)
     season = season_service.update_season(season_id, data)
     return jsonify(schema.dump(season)), 200
+
+
+@bp.delete("/<int:season_id>")
+@jwt_required()
+def delete_season(season_id):
+    season_service.delete_season(season_id)
+    return "", 204

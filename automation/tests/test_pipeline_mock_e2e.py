@@ -6,6 +6,7 @@ from automation.ocr.mock_ocr import MockOcrEngine
 from automation.vision.mock_vision import MockVisionEngine
 from automation.speech.mock_speech import MockSpeechEngine
 from automation.validator.rules import ValidationError
+from automation.parser.fusion import VisionRefusalError
 
 
 def _build_pipeline(live_backend, vision=None):
@@ -54,3 +55,22 @@ def test_pipeline_rejects_wrong_contestant_count(live_backend):
         assert False, "expected ValidationError"
     except ValidationError as exc:
         assert any("Expected exactly 4 contestants" in e for e in exc.errors)
+
+
+def test_pipeline_refuses_when_vision_reports_irrelevant_video(live_backend):
+    vision = MockVisionEngine(is_cooking_competition=False)
+    pipeline = _build_pipeline(live_backend, vision=vision)
+
+    try:
+        pipeline.run("https://youtube.com/watch?v=mock1", week_id=live_backend["week_id"])
+        assert False, "expected VisionRefusalError"
+    except VisionRefusalError as exc:
+        assert "does not show a recognizable cooking competition" in str(exc)
+
+    # The refusal happened locally (fuse() rejected before ever calling
+    # /automation/import) — confirm it still shows up in Automation Logs,
+    # not just as a local exception nobody but the CLI operator ever sees.
+    import requests
+    resp = requests.get(f"{live_backend['base_url']}/api/automation/logs", params={"week_id": live_backend["week_id"]})
+    entries = resp.json()["logs"]
+    assert any(e["status"] == "failure" and "cooking competition" in e["error_message"] for e in entries)

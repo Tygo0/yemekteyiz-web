@@ -1,5 +1,6 @@
 from datetime import date
-from automation.parser.fusion import fuse
+import pytest
+from automation.parser.fusion import fuse, VisionRefusalError
 from automation.vision.mock_vision import MockVisionEngine
 
 
@@ -25,6 +26,16 @@ def test_fuse_builds_payload_from_vision_observations():
 
 
 def test_fuse_raises_on_no_observations():
-    import pytest
     with pytest.raises(ValueError):
         fuse(week_id=1, video_url="x", broadcast_date=None, vision_observations=[])
+
+
+def test_fuse_raises_vision_refusal_instead_of_using_fabricated_data():
+    # If vision honestly reports the video isn't a cooking competition, fuse()
+    # must refuse too — not silently build a payload from whatever contestants
+    # happen to be in the structured response.
+    vision = MockVisionEngine(is_cooking_competition=False)
+    observations = vision.analyze(["frame_0.jpg"], prompt="ignored")
+
+    with pytest.raises(VisionRefusalError):
+        fuse(week_id=1, video_url="x", broadcast_date=None, vision_observations=observations)

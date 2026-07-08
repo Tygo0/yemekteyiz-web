@@ -60,3 +60,28 @@ class BackendClient:
             )
         resp.raise_for_status()
         return resp.json()
+
+    def report_failure(self, week_id: int, error_message: str, contestant_count: int = 0) -> dict:
+        """
+        Logs a failure the pipeline caught on its own side (validator
+        rejection, vision refusal) so it still shows up in GET
+        /automation/logs — without this, only failures the backend itself
+        rejects (via /automation/import) would ever be visible there.
+        """
+        payload = {"week_id": week_id, "error_message": error_message, "contestant_count": contestant_count}
+        resp = requests.post(
+            f"{self.base_url}/api/automation/logs",
+            json=payload,
+            headers=self._auth_headers(),
+            timeout=self._timeout,
+        )
+        if resp.status_code == 401:
+            self._login()
+            resp = requests.post(
+                f"{self.base_url}/api/automation/logs",
+                json=payload,
+                headers=self._auth_headers(),
+                timeout=self._timeout,
+            )
+        resp.raise_for_status()
+        return resp.json()

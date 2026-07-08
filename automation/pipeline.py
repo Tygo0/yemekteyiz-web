@@ -21,11 +21,17 @@ from automation.validator.rules import validate
 from automation.models import WeekImportPayload
 
 VISION_PROMPT = (
-    "You are watching frames from a Turkish cooking competition episode. "
-    "Identify exactly four contestants. For each, extract their name, age, "
-    "profession, city (if shown), the dishes they cooked (name + one of "
-    "soup/appetizer/main_course/dessert/beverage), and every judge's score "
-    "(judge name + integer 1-10) shown on screen. Return structured JSON only."
+    "These frames may or may not be from a Turkish cooking competition episode "
+    "(contestants cooking dishes, judges scoring them on screen). First decide "
+    "honestly whether that's actually what's shown — set is_cooking_competition "
+    "to false and return an empty contestants list if it isn't, or if you are not "
+    "confident. Do not invent or guess plausible-sounding contestants, dishes, or "
+    "scores that are not clearly visible in the frames. Only if it clearly is a "
+    "cooking competition: set is_cooking_competition to true and identify exactly "
+    "four contestants, extracting for each their name, age, profession, city (if "
+    "shown), the dishes they cooked (name + one of soup/appetizer/main_course/"
+    "dessert/beverage), and every judge's score (judge name + integer 1-10) shown "
+    "on screen. Return structured JSON only."
 )
 
 
@@ -65,14 +71,20 @@ class Pipeline:
         vision_observations = self.vision.analyze(media.frame_paths, VISION_PROMPT)
         transcript = self.speech.transcribe(media.audio_path)
 
-        payload = fuse(
-            week_id=week_id,
-            video_url=video_url,
-            broadcast_date=broadcast_date,
-            vision_observations=vision_observations,
-        )
-
-        validate(payload, self.api_client)
+        try:
+            payload = fuse(
+                week_id=week_id,
+                video_url=video_url,
+                broadcast_date=broadcast_date,
+                vision_observations=vision_observations,
+            )
+            validate(payload, self.api_client)
+        except Exception as e:
+            # fuse()/validate() reject locally, before ever reaching
+            # /automation/import — without reporting it explicitly here,
+            # this failure would be invisible in GET /automation/logs.
+            self.api_client.report_failure(week_id, str(e))
+            raise
 
         result = self.api_client.import_week(payload)
 

@@ -6,11 +6,18 @@ class MockVisionEngine(VisionEngine):
     covering a full week (4 contestants), so parser/validator can be exercised
     without spending real API credits."""
 
-    def __init__(self, contestants: list[dict] | None = None):
+    def __init__(self, contestants: list[dict] | None = None, is_cooking_competition: bool = True):
         self._contestants = contestants if contestants is not None else _default_contestants()
+        self._is_cooking_competition = is_cooking_competition
 
     def analyze(self, frame_paths: list[str], prompt: str) -> list[VisionObservation]:
-        return [VisionObservation(frame_paths=frame_paths, structured={"contestants": self._contestants})]
+        return [VisionObservation(
+            frame_paths=frame_paths,
+            structured={
+                "is_cooking_competition": self._is_cooking_competition,
+                "contestants": self._contestants if self._is_cooking_competition else [],
+            },
+        )]
 
 
 def _default_contestants() -> list[dict]:

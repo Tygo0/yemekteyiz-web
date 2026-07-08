@@ -160,3 +160,35 @@ def test_logs_endpoint_requires_no_auth_and_lists_all_by_default(client, auth_he
     resp = client.get("/api/automation/logs")
     assert resp.status_code == 200
     assert len(resp.get_json()["logs"]) == 1
+
+
+def test_report_failure_logs_a_client_side_rejection(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    week_id = _create_week(client, auth_headers, season_id)
+
+    resp = client.post(
+        "/api/automation/logs",
+        json={
+            "week_id": week_id,
+            "error_message": "Vision model determined this video is not a cooking competition episode",
+            "contestant_count": 0,
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["status"] == "failure"
+    assert body["week_id"] == week_id
+
+    logs = client.get(f"/api/automation/logs?week_id={week_id}").get_json()["logs"]
+    assert len(logs) == 1
+    assert logs[0]["status"] == "failure"
+    assert "not a cooking competition" in logs[0]["error_message"]
+
+
+def test_report_failure_requires_auth(client):
+    resp = client.post(
+        "/api/automation/logs",
+        json={"week_id": 1, "error_message": "x"},
+    )
+    assert resp.status_code == 401

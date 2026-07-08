@@ -13,6 +13,12 @@ from automation.models import WeekImportPayload, ContestantData, DishData, Score
 from automation.vision.base import VisionObservation
 
 
+class VisionRefusalError(Exception):
+    """Raised when the vision stage honestly reports the video isn't a
+    recognizable cooking competition episode, instead of fabricating
+    plausible-looking contestants for content that isn't actually there."""
+
+
 def fuse(
     week_id: int,
     video_url: str,
@@ -23,6 +29,14 @@ def fuse(
         raise ValueError("No vision observations to fuse")
 
     structured = vision_observations[0].structured
+
+    if not structured.get("is_cooking_competition", True):
+        raise VisionRefusalError(
+            "Vision model determined this video does not show a recognizable "
+            "cooking competition episode — skipping import rather than "
+            "fabricating contestant data."
+        )
+
     contestants_raw = structured.get("contestants", [])
 
     contestants = [

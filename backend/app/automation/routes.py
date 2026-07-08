@@ -7,7 +7,11 @@ own validation and persistence, exactly like a human admin's requests would.
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
-from app.schemas.automation_schema import AutomationImportSchema, AutomationImportLogSchema
+from app.schemas.automation_schema import (
+    AutomationImportSchema,
+    AutomationImportLogSchema,
+    AutomationFailureReportSchema,
+)
 from app.schemas.contestant_schema import ContestantSchema
 from app.schemas.episode_schema import EpisodeSchema
 from app.schemas.dish_schema import DishSchema
@@ -23,6 +27,7 @@ episode_schema = EpisodeSchema()
 dish_schema = DishSchema(many=True)
 score_schema = ScoreSchema(many=True)
 log_schema = AutomationImportLogSchema(many=True)
+failure_report_schema = AutomationFailureReportSchema()
 
 
 @bp.post("/import")
@@ -58,6 +63,19 @@ def trigger_import():
             for entry in created
         ],
     }), 201
+
+
+@bp.post("/logs")
+@jwt_required()
+def report_failure():
+    data = failure_report_schema.load(request.get_json(force=True) or {})
+    log = automation_service.log_import(
+        week_id=data["week_id"],
+        success=False,
+        contestant_count=data["contestant_count"],
+        error_message=data["error_message"],
+    )
+    return jsonify(AutomationImportLogSchema().dump(log)), 201
 
 
 @bp.get("/status")

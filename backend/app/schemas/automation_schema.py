@@ -43,6 +43,18 @@ class AutomationImportSchema(Schema):
     )
 
 
+class AutomationFailureReportSchema(Schema):
+    # Lets the automation pipeline log a failure it caught on its own side
+    # (e.g. its client-side validator rejecting a payload, or the vision
+    # stage refusing to fabricate data for an irrelevant video) BEFORE ever
+    # building a full /automation/import payload — otherwise those failures
+    # would be invisible to GET /automation/logs entirely, since they never
+    # reach the backend at all today.
+    week_id = fields.Int(required=True)
+    error_message = fields.Str(required=True, validate=validate.Length(min=1, max=2000))
+    contestant_count = fields.Int(required=False, load_default=0)
+
+
 class AutomationImportLogSchema(Schema):
     id = fields.Int(dump_only=True)
     week_id = fields.Int(dump_only=True)

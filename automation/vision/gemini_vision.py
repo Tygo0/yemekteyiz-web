@@ -24,6 +24,12 @@ class _Contestant(BaseModel):
 
 
 class _WeekExtraction(BaseModel):
+    # Forcing structured output with no "this doesn't apply" escape hatch
+    # pushes the model toward fabricating a plausible-looking answer instead
+    # of refusing, when the frames don't actually show a cooking competition.
+    # Making the model commit to this judgment explicitly, separately from
+    # the contestants list, gives it a truthful way out instead.
+    is_cooking_competition: bool
     contestants: list[_Contestant]
 
 
@@ -50,5 +56,9 @@ class GeminiVisionEngine(VisionEngine):
             ),
         )
 
-        structured = response.parsed.model_dump() if response.parsed else {"contestants": []}
+        structured = (
+            response.parsed.model_dump()
+            if response.parsed
+            else {"is_cooking_competition": False, "contestants": []}
+        )
         return [VisionObservation(frame_paths=frame_paths, structured=structured)]

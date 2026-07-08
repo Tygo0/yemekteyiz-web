@@ -1,0 +1,5 @@
+# Shell scripts run inside Linux containers, where a CRLF-mangled shebang
+# line (#!/bin/sh\r) fails with a confusing "no such file or directory"
+# error. Force LF regardless of the checking-out machine's core.autocrlf
+# setting (Windows defaults to true, which silently breaks this).
+*.sh text eol=lf

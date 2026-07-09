@@ -5,28 +5,34 @@ from app.services import week_service
 
 
 def weekly_winners():
-    """Every week that has a winner set, with the winner's name."""
+    """Every week that has at least one winner set, with all winners' names —
+    a week can have more than one (a tie), since winner status lives on
+    Contestant.is_winner rather than a single Week.winner_id."""
     rows = (
         db.session.query(Week, Contestant)
-        .join(Contestant, Week.winner_id == Contestant.id)
-        .order_by(Week.season_id, Week.week_number)
+        .join(Contestant, Contestant.week_id == Week.id)
+        .filter(Contestant.is_winner.is_(True))
+        .order_by(Week.season_id, Week.week_number, Contestant.id)
         .all()
     )
-    return [
-        {
+    weeks = {}
+    for week, winner in rows:
+        entry = weeks.setdefault(week.id, {
             "week_id": week.id,
             "season_id": week.season_id,
             "week_number": week.week_number,
-            "winner_id": winner.id,
-            "winner_name": winner.name,
-        }
-        for week, winner in rows
-    ]
+            "winners": [],
+        })
+        entry["winners"].append({"id": winner.id, "name": winner.name})
+    return list(weeks.values())
 
 
 def average_score():
-    result = db.session.query(func.avg(Score.value)).scalar()
-    return round(float(result), 2) if result is not None else None
+    avg_result, count = db.session.query(func.avg(Score.value), func.count(Score.id)).one()
+    return {
+        "average": round(float(avg_result), 2) if avg_result is not None else None,
+        "count": count,
+    }
 
 
 def highest_score_ever():
@@ -60,24 +66,28 @@ def most_common_dish():
     return {"dish_name": row.name, "count": row.count}
 
 
-def most_successful_contestant():
-    """Contestant with the highest average score across all their episodes."""
-    row = (
+def most_successful_contestants():
+    """Contestant(s) with the highest total points across all their episodes —
+    a sum, not an average, so a strong run across many episodes isn't diluted
+    the same way a single bad episode would drag down an average. Returns
+    every contestant tied for the max, as a list, instead of arbitrarily
+    picking one when there's a genuine tie."""
+    rows = (
         db.session.query(
-            Contestant.id, Contestant.name, func.avg(Score.value).label("avg_score")
+            Contestant.id, Contestant.name, func.sum(Score.value).label("total_score")
         )
         .join(Score, Score.contestant_id == Contestant.id)
         .group_by(Contestant.id, Contestant.name)
-        .order_by(func.avg(Score.value).desc())
-        .first()
+        .all()
     )
-    if not row:
-        return None
-    return {
-        "contestant_id": row.id,
-        "contestant_name": row.name,
-        "average_score": round(float(row.avg_score), 2),
-    }
+    if not rows:
+        return []
+    max_total = max(r.total_score for r in rows)
+    return [
+        {"contestant_id": r.id, "contestant_name": r.name, "total_score": int(r.total_score)}
+        for r in rows
+        if r.total_score == max_total
+    ]
 
 
 def average_weekly_score():
@@ -163,7 +173,7 @@ def get_all_statistics():
         "average_score": average_score(),
         "highest_score_ever": highest_score_ever(),
         "most_common_dish": most_common_dish(),
-        "most_successful_contestant": most_successful_contestant(),
+        "most_successful_contestants": most_successful_contestants(),
         "average_weekly_score": average_weekly_score(),
         "score_distribution": score_distribution(),
     }

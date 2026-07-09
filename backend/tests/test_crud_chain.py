@@ -147,16 +147,23 @@ def test_dish_invalid_category_rejected(client, auth_headers):
     assert resp.status_code == 400
 
 
-def test_set_winner_must_belong_to_week(client, auth_headers):
+def test_two_contestants_can_tie_as_winners_in_the_same_week(client, auth_headers):
+    # is_winner lives on Contestant (not a single Week.winner_id) specifically
+    # so a tie is representable at all.
     season_id = _create_season(client, auth_headers)
-    week1 = _create_week(client, auth_headers, season_id, week_number=1)
-    week2 = _create_week(client, auth_headers, season_id, week_number=2)
-    outsider = _create_contestant(client, auth_headers, week2, name="Outsider")
+    week_id = _create_week(client, auth_headers, season_id)
+    c1 = _create_contestant(client, auth_headers, week_id, name="Ayşe")
+    c2 = _create_contestant(client, auth_headers, week_id, name="Mehmet")
 
-    resp = client.put(
-        f"/api/weeks/{week1}", json={"winner_id": outsider}, headers=auth_headers
-    )
-    assert resp.status_code == 400
+    for cid in (c1, c2):
+        resp = client.put(
+            f"/api/contestants/{cid}", json={"is_winner": True}, headers=auth_headers
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["is_winner"] is True
+
+    assert client.get(f"/api/contestants/{c1}").get_json()["is_winner"] is True
+    assert client.get(f"/api/contestants/{c2}").get_json()["is_winner"] is True
 
 
 def test_delete_week_cascades_to_contestants(client, auth_headers):

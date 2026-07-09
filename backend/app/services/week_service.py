@@ -1,6 +1,6 @@
 from app.extensions import db
-from app.models import Week, Contestant, Season
-from app.utils.errors import NotFoundError, ConflictError, AppError
+from app.models import Week, Season
+from app.utils.errors import NotFoundError, ConflictError
 
 
 def list_weeks():
@@ -34,15 +34,6 @@ def create_week(data):
 
 def update_week(week_id, data):
     week = get_week(week_id)
-
-    if "winner_id" in data and data["winner_id"] is not None:
-        winner = db.session.get(Contestant, data["winner_id"])
-        if not winner:
-            raise NotFoundError(f"Contestant {data['winner_id']} not found")
-        if winner.week_id != week.id:
-            raise AppError(
-                "Winner must be a contestant belonging to this week", status_code=400
-            )
 
     for key, value in data.items():
         setattr(week, key, value)

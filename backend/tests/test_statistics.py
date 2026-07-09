@@ -50,7 +50,7 @@ def _build_scored_week(client, auth_headers):
             headers=auth_headers,
         )
 
-    client.put(f"/api/weeks/{week_id}", json={"winner_id": c1}, headers=auth_headers)
+    client.put(f"/api/contestants/{c1}", json={"is_winner": True}, headers=auth_headers)
     return {"week_id": week_id, "c1": c1, "c2": c2}
 
 
@@ -59,12 +59,43 @@ def test_statistics_endpoint_is_public(client):
     assert resp.status_code == 200
 
 
+def test_tied_contestants_both_appear_as_most_successful_and_weekly_winners(client, auth_headers):
+    ids = _build_scored_week(client, auth_headers)
+    # Bring c2's total up to match c1's (18) by adding one more score, and
+    # mark both as winners — a real tie, which the old single Week.winner_id
+    # design couldn't represent at all.
+    e1 = client.get(f"/api/episodes?contestant_id={ids['c1']}").get_json()[0]["id"]
+    client.post(
+        "/api/scores",
+        json={"episode_id": e1, "contestant_id": ids["c1"], "judge_name": "Somer", "value": 0},
+        headers=auth_headers,
+    )
+
+    e2 = client.get(f"/api/episodes?contestant_id={ids['c2']}").get_json()[0]["id"]
+    client.post(
+        "/api/scores",
+        json={"episode_id": e2, "contestant_id": ids["c2"], "judge_name": "Somer", "value": 5},
+        headers=auth_headers,
+    )
+    client.put(f"/api/contestants/{ids['c2']}", json={"is_winner": True}, headers=auth_headers)
+
+    stats = client.get("/api/statistics").get_json()
+
+    successful_ids = {c["contestant_id"] for c in stats["most_successful_contestants"]}
+    assert successful_ids == {ids["c1"], ids["c2"]}
+
+    winners = stats["weekly_winners"]
+    assert len(winners) == 1
+    assert {w["id"] for w in winners[0]["winners"]} == {ids["c1"], ids["c2"]}
+
+
 def test_statistics_values(client, auth_headers):
     ids = _build_scored_week(client, auth_headers)
     stats = client.get("/api/statistics").get_json()
 
     # average of 10, 8, 6, 7 = 7.75
-    assert stats["average_score"] == 7.75
+    assert stats["average_score"]["average"] == 7.75
+    assert stats["average_score"]["count"] == 4
 
     assert stats["highest_score_ever"]["value"] == 10
     assert stats["highest_score_ever"]["contestant_id"] == ids["c1"]
@@ -72,16 +103,17 @@ def test_statistics_values(client, auth_headers):
     assert stats["most_common_dish"]["dish_name"] == "Mercimek Çorbası"
     assert stats["most_common_dish"]["count"] == 2
 
-    # c1 avg = (10+8)/2 = 9, c2 avg = (6+7)/2 = 6.5 -> c1 most successful
-    assert stats["most_successful_contestant"]["contestant_id"] == ids["c1"]
-    assert stats["most_successful_contestant"]["average_score"] == 9.0
+    # c1 total = 10+8 = 18, c2 total = 6+7 = 13 -> c1 most successful
+    assert len(stats["most_successful_contestants"]) == 1
+    assert stats["most_successful_contestants"][0]["contestant_id"] == ids["c1"]
+    assert stats["most_successful_contestants"][0]["total_score"] == 18
 
     assert stats["score_distribution"]["10"] == 1
     assert stats["score_distribution"]["6"] == 1
 
     winners = stats["weekly_winners"]
     assert len(winners) == 1
-    assert winners[0]["winner_id"] == ids["c1"]
+    assert [w["id"] for w in winners[0]["winners"]] == [ids["c1"]]
 
     weekly_avgs = stats["average_weekly_score"]
     assert len(weekly_avgs) == 1

@@ -124,7 +124,6 @@ export default function Weeks() {
       air_date: w.air_date || '',
       youtube_url: w.youtube_url || '',
       notes: w.notes || '',
-      winner_id: w.winner_id || '',
     })
     setWeekEditError(null)
   }
@@ -143,7 +142,6 @@ export default function Weeks() {
         air_date: weekEditForm.air_date || null,
         youtube_url: weekEditForm.youtube_url || null,
         notes: weekEditForm.notes || null,
-        winner_id: weekEditForm.winner_id ? Number(weekEditForm.winner_id) : null,
       })
       setEditingWeekId(null)
       loadAll()
@@ -152,12 +150,21 @@ export default function Weeks() {
     }
   }
 
+  async function handleToggleWinner(contestantId, isWinner) {
+    try {
+      await contestantService.update(contestantId, { is_winner: isWinner })
+      loadAll()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   if (loading) return <LoadingState label="Loading weeks…" />
   if (error) return <ErrorState message={error} />
 
   const seasonName = (id) => seasons.find((s) => s.id === id)?.name || `Season ${id}`
   const contestantsForWeek = (weekId) => contestants.filter((c) => c.week_id === weekId)
-  const contestantName = (id) => contestants.find((c) => c.id === id)?.name
+  const winnersForWeek = (weekId) => contestantsForWeek(weekId).filter((c) => c.is_winner)
 
   return (
     <div>
@@ -216,24 +223,6 @@ export default function Weeks() {
                       className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm w-56"
                     />
                   </div>
-                  <div>
-                    <label htmlFor={`edit-winner-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Winner</label>
-                    <select
-                      id={`edit-winner-${w.id}`}
-                      value={weekEditForm.winner_id}
-                      onChange={(e) =>
-                        setWeekEditForm({ ...weekEditForm, winner_id: e.target.value })
-                      }
-                      className="rounded-md border-2 border-ink/15 px-3 py-1.5 bg-white text-sm"
-                    >
-                      <option value="">No winner set</option>
-                      {contestantsForWeek(w.id).map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
                 <div>
                   <label htmlFor={`edit-notes-${w.id}`} className="block text-xs font-medium text-ink/60 mb-1">Notes</label>
@@ -261,22 +250,35 @@ export default function Weeks() {
                     Cancel
                   </button>
                 </div>
-                {!contestantsForWeek(w.id).length && (
-                  <p className="text-xs text-ink/40">
-                    Add contestants to this week before you can set a winner.
-                  </p>
-                )}
               </form>
             ) : (
-              <div key={w.id} className="flex items-center justify-between px-5 py-3">
+              <div key={w.id} className="flex items-center justify-between px-5 py-3 gap-4 flex-wrap">
                 <div>
                   <p className="font-medium text-ink">
                     {seasonName(w.season_id)} — Week {w.week_number}
                   </p>
                   <p className="text-xs text-ink/50">
                     {w.air_date || 'Air date TBD'}
-                    {w.winner_id ? ` · Winner: ${contestantName(w.winner_id) || w.winner_id}` : ''}
+                    {winnersForWeek(w.id).length > 0
+                      ? ` · Winner${winnersForWeek(w.id).length > 1 ? 's' : ''}: ${winnersForWeek(w.id)
+                          .map((c) => c.name)
+                          .join(', ')}`
+                      : ''}
                   </p>
+                  {isAuthenticated && contestantsForWeek(w.id).length > 0 && (
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                      {contestantsForWeek(w.id).map((c) => (
+                        <label key={c.id} className="flex items-center gap-1.5 text-xs text-ink/70">
+                          <input
+                            type="checkbox"
+                            checked={c.is_winner}
+                            onChange={(e) => handleToggleWinner(c.id, e.target.checked)}
+                          />
+                          {c.name}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {isAuthenticated && (
                   <div className="flex gap-3">

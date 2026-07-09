@@ -10,6 +10,7 @@ class ContestantSchema(Schema):
     city = fields.Str(required=False, allow_none=True, validate=validate.Length(max=100))
     biography = fields.Str(required=False, allow_none=True)
     photo_url = fields.Str(required=False, allow_none=True, validate=validate.Length(max=500))
+    is_winner = fields.Bool(required=False, load_default=False)
 
 
 class ContestantUpdateSchema(Schema):
@@ -19,3 +20,4 @@ class ContestantUpdateSchema(Schema):
     city = fields.Str(allow_none=True, validate=validate.Length(max=100))
     biography = fields.Str(allow_none=True)
     photo_url = fields.Str(allow_none=True, validate=validate.Length(max=500))
+    is_winner = fields.Bool()

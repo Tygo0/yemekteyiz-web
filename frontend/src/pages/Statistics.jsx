@@ -70,8 +70,18 @@ export default function Statistics() {
           <p className="text-xs font-medium text-ink/50 tracking-wide mb-4">
             OVERALL AVERAGE SCORE
           </p>
-          {stats.average_score !== null ? (
-            <ScorePaddle value={stats.average_score} size="lg" />
+          {stats.average_score.average !== null ? (
+            <div>
+              {/* Not a ScorePaddle — that component is sized for a single-digit
+                  1-10 judge score, not a decimal average, which would overflow it. */}
+              <p className="font-display text-4xl font-semibold text-ink">
+                {stats.average_score.average}
+                <span className="text-lg text-ink/40 font-normal"> / 10</span>
+              </p>
+              <p className="text-sm text-ink/50 mt-1">
+                across {stats.average_score.count} score{stats.average_score.count === 1 ? '' : 's'}, all-time
+              </p>
+            </div>
           ) : (
             <p className="text-sm text-ink/40">No scores yet</p>
           )}
@@ -79,15 +89,15 @@ export default function Statistics() {
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-6">
           <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
-            MOST SUCCESSFUL CONTESTANT
+            MOST SUCCESSFUL CONTESTANT{stats.most_successful_contestants.length > 1 ? 'S' : ''}
           </p>
-          {stats.most_successful_contestant ? (
+          {stats.most_successful_contestants.length > 0 ? (
             <div>
               <p className="font-display text-xl font-semibold text-ink">
-                {stats.most_successful_contestant.contestant_name}
+                {stats.most_successful_contestants.map((c) => c.contestant_name).join(' & ')}
               </p>
               <p className="text-sm text-ink/50">
-                average score {stats.most_successful_contestant.average_score}
+                {stats.most_successful_contestants[0].total_score} total points
               </p>
             </div>
           ) : (
@@ -118,14 +128,24 @@ export default function Statistics() {
         </p>
         <div className="flex items-end gap-2 h-32">
           {Object.entries(stats.score_distribution).map(([value, count]) => (
-            <div key={value} className="flex-1 flex flex-col items-center gap-1">
+            // h-full (not the old flex-col wrapper) so the bar's percentage
+            // height actually resolves against the chart's 128px — a plain
+            // "items-end" parent aligns flex items, it doesn't stretch them,
+            // so the old wrapper div was only ever as tall as its own content.
+            <div key={value} className="flex-1 h-full flex items-end">
               <div
                 className="w-full bg-teal rounded-t-sm"
                 style={{ height: `${(count / maxCount) * 100}%`, minHeight: count ? '4px' : '1px' }}
                 title={`${count} score${count === 1 ? '' : 's'} of ${value}`}
               />
-              <span className="text-xs font-mono text-ink/50">{value}</span>
             </div>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-1">
+          {Object.keys(stats.score_distribution).map((value) => (
+            <span key={value} className="flex-1 text-center text-xs font-mono text-ink/50">
+              {value}
+            </span>
           ))}
         </div>
       </div>
@@ -198,7 +218,9 @@ export default function Statistics() {
             {stats.weekly_winners.map((w) => (
               <div key={w.week_id} className="flex items-center justify-between px-4 py-2.5">
                 <span className="text-sm text-ink/70">Week {w.week_number}</span>
-                <span className="font-medium text-ink text-sm">{w.winner_name}</span>
+                <span className="font-medium text-ink text-sm">
+                  {w.winners.map((winner) => winner.name).join(' & ')}
+                </span>
               </div>
             ))}
           </div>

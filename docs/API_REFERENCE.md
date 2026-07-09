@@ -32,7 +32,7 @@ Authorization: Bearer <jwt-access-token>
 | GET | `/weeks` | none | |
 | GET | `/weeks/{id}` | none | |
 | POST | `/weeks` | required | 409 if `week_number` already used in that `season_id` |
-| PUT | `/weeks/{id}` | required | Setting `winner_id` validates that contestant belongs to this week |
+| PUT | `/weeks/{id}` | required | |
 | DELETE | `/weeks/{id}` | required | Cascades: deletes the week's contestants (and their episodes/dishes/scores) |
 
 ## Contestants
@@ -42,7 +42,7 @@ Authorization: Bearer <jwt-access-token>
 | GET | `/contestants?week_id=` | none | `week_id` filter optional |
 | GET | `/contestants/{id}` | none | |
 | POST | `/contestants` | required | |
-| PUT | `/contestants/{id}` | required | |
+| PUT | `/contestants/{id}` | required | Set `is_winner: true` to mark as a winner for their week — more than one contestant can win the same week (ties) |
 | DELETE | `/contestants/{id}` | required | |
 
 ## Episodes
@@ -81,15 +81,19 @@ Authorization: Bearer <jwt-access-token>
 Returns:
 ```json
 {
-  "weekly_winners": [{ "week_id": 1, "week_number": 15, "winner_id": 3, "winner_name": "Ayşe" }],
-  "average_score": 7.75,
+  "weekly_winners": [{ "week_id": 1, "week_number": 15, "winners": [{ "id": 3, "name": "Ayşe" }] }],
+  "average_score": { "average": 7.75, "count": 42 },
   "highest_score_ever": { "score_id": 1, "value": 10, "contestant_id": 3, "contestant_name": "Ayşe", "judge_name": "Zuhal" },
   "most_common_dish": { "dish_name": "Mercimek Çorbası", "count": 2 },
-  "most_successful_contestant": { "contestant_id": 3, "contestant_name": "Ayşe", "average_score": 9.0 },
+  "most_successful_contestants": [{ "contestant_id": 3, "contestant_name": "Ayşe", "total_score": 27 }],
   "average_weekly_score": [{ "week_id": 1, "week_number": 15, "average_score": 7.75 }],
   "score_distribution": { "1": 0, "2": 0, "...": "...", "10": 1 }
 }
 ```
+
+`weekly_winners[].winners` and `most_successful_contestants` are both lists
+specifically to represent ties — e.g. two contestants winning the same week
+with equal total points both appear, rather than one being picked arbitrarily.
 
 `GET /statistics/vote-matrix/{week_id}` returns who gave points to whom for one
 week — rows are that week's contestants; columns are every distinct judge who

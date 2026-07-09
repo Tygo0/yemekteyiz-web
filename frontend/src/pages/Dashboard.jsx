@@ -56,15 +56,15 @@ export default function Dashboard() {
 
         <div className="border-2 border-ink/10 bg-stone-50 rounded-lg p-5">
           <p className="text-xs font-medium text-ink/50 tracking-wide mb-3">
-            MOST SUCCESSFUL CONTESTANT
+            MOST SUCCESSFUL CONTESTANT{stats.most_successful_contestants.length > 1 ? 'S' : ''}
           </p>
-          {stats.most_successful_contestant ? (
+          {stats.most_successful_contestants.length > 0 ? (
             <div>
               <p className="font-medium text-ink">
-                {stats.most_successful_contestant.contestant_name}
+                {stats.most_successful_contestants.map((c) => c.contestant_name).join(' & ')}
               </p>
               <p className="text-xs text-ink/50">
-                avg {stats.most_successful_contestant.average_score}
+                {stats.most_successful_contestants[0].total_score} total points
               </p>
             </div>
           ) : (
@@ -101,7 +101,9 @@ export default function Dashboard() {
           <div key={w.id} className="flex items-center justify-between px-5 py-3">
             <span className="font-medium text-ink">Week {w.week_number}</span>
             <span className="text-sm text-ink/50">
-              {w.winner_id ? 'Winner set' : 'Winner not yet set'}
+              {stats.weekly_winners.some((ww) => ww.week_id === w.id)
+                ? 'Winner set'
+                : 'Winner not yet set'}
             </span>
           </div>
         ))}

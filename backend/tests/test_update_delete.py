@@ -165,13 +165,13 @@ def test_update_contestant_full_fields(client, auth_headers):
     assert resp.get_json()["photo_url"] == "https://example.com/ayse.jpg"
 
 
-def test_update_week_sets_winner(client, auth_headers):
+def test_update_contestant_sets_winner(client, auth_headers):
     season_id = _create_season(client, auth_headers)
     week_id = _create_week(client, auth_headers, season_id)
     contestant_id = _create_contestant(client, auth_headers, week_id)
 
     resp = client.put(
-        f"/api/weeks/{week_id}", json={"winner_id": contestant_id}, headers=auth_headers
+        f"/api/contestants/{contestant_id}", json={"is_winner": True}, headers=auth_headers
     )
     assert resp.status_code == 200
-    assert resp.get_json()["winner_id"] == contestant_id
+    assert resp.get_json()["is_winner"] is True

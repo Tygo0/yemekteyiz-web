@@ -14,6 +14,10 @@ class Contestant(db.Model):
     city = db.Column(db.String(100), nullable=True)
     biography = db.Column(db.Text, nullable=True)
     photo_url = db.Column(db.String(500), nullable=True)
+    # Lives on the contestant rather than as Week.winner_id (a single FK) so
+    # a tie — more than one winner in the same week — is representable at
+    # all, instead of the data model forcing a single "the" winner to exist.
+    is_winner = db.Column(db.Boolean, nullable=False, default=False)
 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

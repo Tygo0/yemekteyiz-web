@@ -27,14 +27,19 @@ fragments into ~4 people. This version instead:
   1. Filters out persistent watermark/logo noise first (persistent_
      fragment_filter), since a genuine contestant/dish/score graphic is only
      on screen briefly, unlike a watermark.
-  2. Clusters the remaining frames by temporal/content proximity
+  2. Filters out sentence-like narration captions (caption_length_filter) —
+     day headers, judges' quoted commentary, prize-money announcements — that
+     the per-cluster classifier otherwise accepted as "relevant" and
+     hallucinated fields out of (one produced a "score" of 200000, pulled
+     from a caption about a cash prize).
+  3. Clusters the remaining frames by temporal/content proximity
      (frame_clustering), so consecutive frames showing the same on-screen
      graphic become one small extraction unit instead of hundreds of loose
      fragments.
-  3. Runs one extraction call per cluster, asking only "is this graphic
+  4. Runs one extraction call per cluster, asking only "is this graphic
      relevant, and if so what does it show" — bounded to that cluster's own
      small fragment list, not the whole episode's.
-  4. Fuses the per-cluster partial extractions (cluster_fusion) into the
+  5. Fuses the per-cluster partial extractions (cluster_fusion) into the
      final contestants list, attributing dish/score-only clusters (no name of
      their own) to whichever contestant was most recently established, and
      merging re-mentions of an already-seen name (OCR renders it slightly
@@ -55,6 +60,7 @@ from automation.ocr.base import OcrResult
 from automation.speech.base import Transcript
 from automation.vision.base import VisionEngine, VisionObservation
 from automation.progress import report, report_progress
+from automation.vision.caption_length_filter import filter_caption_like_fragments
 from automation.vision.cluster_fusion import fuse_cluster_extractions
 from automation.vision.frame_clustering import FrameCluster, cluster_by_proximity
 from automation.vision.persistent_fragment_filter import filter_persistent_fragments
@@ -185,6 +191,7 @@ class LocalVisionEngine(VisionEngine):
             )]
 
         filtered = filter_persistent_fragments(ocr_results)
+        filtered = filter_caption_like_fragments(filtered)
         clusters = cluster_by_proximity(filtered)
         report(f"  {len(clusters)} on-screen graphic cluster(s) found, extracting each...")
 

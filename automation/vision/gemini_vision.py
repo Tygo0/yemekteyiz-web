@@ -4,6 +4,7 @@ from google.genai import types
 from pydantic import BaseModel
 from automation.vision.base import VisionEngine, VisionObservation
 from automation.ocr.base import OcrResult
+from automation.progress import report
 from automation.speech.base import Transcript
 
 
@@ -50,6 +51,7 @@ class GeminiVisionEngine(VisionEngine):
     ) -> list[VisionObservation]:
         # ocr_results/transcript are unused here — Gemini reads the raw frames
         # directly and doesn't need pre-extracted text.
+        report(f"  calling Gemini vision API with {len(frame_paths)} frame(s) (single request)...")
         # Sends every frame in one request — Gemini's multi-image understanding
         # lets it reconcile the same contestant/score appearing across frames
         # instead of us having to fuse per-frame guesses ourselves.

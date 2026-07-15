@@ -54,6 +54,7 @@ from pydantic import BaseModel
 from automation.ocr.base import OcrResult
 from automation.speech.base import Transcript
 from automation.vision.base import VisionEngine, VisionObservation
+from automation.progress import report, report_progress
 from automation.vision.cluster_fusion import fuse_cluster_extractions
 from automation.vision.frame_clustering import FrameCluster, cluster_by_proximity
 from automation.vision.persistent_fragment_filter import filter_persistent_fragments
@@ -185,8 +186,12 @@ class LocalVisionEngine(VisionEngine):
 
         filtered = filter_persistent_fragments(ocr_results)
         clusters = cluster_by_proximity(filtered)
+        report(f"  {len(clusters)} on-screen graphic cluster(s) found, extracting each...")
 
-        partials = [self._extract_cluster(cluster, transcript_text) for cluster in clusters]
+        partials = []
+        for i, cluster in enumerate(clusters):
+            partials.append(self._extract_cluster(cluster, transcript_text))
+            report_progress("  cluster extraction", i + 1, len(clusters))
         contestants = fuse_cluster_extractions(partials)
 
         structured = {

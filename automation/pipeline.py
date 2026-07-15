@@ -68,8 +68,14 @@ class Pipeline:
         media = self.extractor.extract(video.video_path, work_dir)
 
         ocr_results = self.ocr.read(media.frame_paths)
-        vision_observations = self.vision.analyze(media.frame_paths, VISION_PROMPT)
         transcript = self.speech.transcribe(media.audio_path)
+        # ocr_results/transcript are computed once here and handed to whichever
+        # vision engine is wired in — GeminiVisionEngine ignores them (it reads
+        # the raw frames directly), LocalVisionEngine relies on them as its
+        # actual evidence. Avoids a second OCR/speech pass per engine.
+        vision_observations = self.vision.analyze(
+            media.frame_paths, VISION_PROMPT, ocr_results=ocr_results, transcript=transcript
+        )
 
         try:
             payload = fuse(

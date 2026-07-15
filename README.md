@@ -106,6 +106,23 @@ python3 -m automation.cli --video-url <url> --week-id <id> --mock   # dry run, s
 See `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section and
 `docs/API_REFERENCE.md`'s Automation endpoints for the full picture.
 
+**Local (no external API) vision engine** — an alternative to Gemini for
+extracting contestants/dishes/scores, using a local Ollama model instead of a
+hosted API call. Set `AUTOMATION_VISION_ENGINE=local` in `automation/.env`
+(default is `gemini`); no `GEMINI_API_KEY` is needed in that mode. Because a
+7B local model is unreliable at reading/writing Turkish directly, this engine
+never generates Turkish text itself — see `automation/vision/local_vision.py`
+for the index-based extraction scheme that guarantees any Turkish text in the
+result is a verbatim OCR copy, not model output. Setup:
+```bash
+ollama pull qwen2.5:7b-instruct-q4_K_M   # or set OLLAMA_MODEL to another pulled model
+ollama serve
+python3 -m pytest automation/tests/test_local_vision_smoke.py -v   # skipped unless Ollama is reachable
+```
+Expect more validator rejections than Gemini initially (wrong contestant
+count, missing dishes/scores) — that's why the engine is switchable rather
+than a full replacement.
+
 ## Deploying with Docker
 
 A third option, for running this as a real service (Postgres instead of

@@ -24,6 +24,11 @@ from automation.ocr.base import OcrResult
 
 DEFAULT_MAX_FRAME_COVERAGE_RATIO = 0.3
 DEFAULT_SIMILARITY_THRESHOLD = 0.82
+# Coverage ratio is meaningless noise with too few samples -- a single frame
+# (or a handful, as in a short test clip) makes every fragment "cover" a huge
+# share of frames trivially. Below this many frames, skip filtering rather
+# than risk wiping out genuine content.
+DEFAULT_MIN_FRAMES_TO_FILTER = 10
 
 
 def _normalize(text: str) -> str:
@@ -49,6 +54,7 @@ def filter_persistent_fragments(
     ocr_results: list[OcrResult],
     max_frame_coverage_ratio: float = DEFAULT_MAX_FRAME_COVERAGE_RATIO,
     similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+    min_frames_to_filter: int = DEFAULT_MIN_FRAMES_TO_FILTER,
 ) -> list[OcrResult]:
     """Return ocr_results with persistent-noise fragments removed from every
     frame's text_lines. A fragment is dropped only as part of a whole family —
@@ -61,9 +67,14 @@ def filter_persistent_fragments(
     above any one contestant's realistic share (e.g. above 1/4 for a 4-
     contestant week) and well below a true whole-episode watermark's coverage
     (typically near 100%) — the default of 30% sits in that gap.
+
+    Below min_frames_to_filter total frames, filtering is skipped entirely
+    (input returned unchanged) — coverage ratios aren't meaningful with only a
+    handful of samples, e.g. a short test clip, where any single fragment
+    trivially "covers" a large share of frames.
     """
     total_frames = len(ocr_results)
-    if total_frames == 0:
+    if total_frames == 0 or total_frames < min_frames_to_filter:
         return ocr_results
 
     families: list[_FragmentFamily] = []

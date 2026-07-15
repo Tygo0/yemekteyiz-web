@@ -31,9 +31,9 @@ def test_watermark_with_ocr_noise_variants_is_still_dropped():
     # Every pairwise similarity among these 5 is >= 0.857, so they cluster
     # into one family regardless of set-iteration order.
     variants = ["TOPALlA", "ToPALLA", "topalla", "TOPALLa", "TOPALIA"]
-    # 5 of 9 frames (~56%) carry a watermark variant -- well over the 30%
-    # threshold -- the other 4 have unrelated, unique one-off content.
-    ocr_results = _frames(*[[v] for v in variants], *[[f"unrelated_{i}"] for i in range(4)])
+    # 5 of 10 frames (50%) carry a watermark variant -- well over the 30%
+    # threshold -- the other 5 have unrelated, unique one-off content.
+    ocr_results = _frames(*[[v] for v in variants], *[[f"unrelated_{i}"] for i in range(5)])
     result = filter_persistent_fragments(ocr_results, max_frame_coverage_ratio=0.3)
     assert all(v not in f.text_lines for f in result for v in variants)
 
@@ -41,12 +41,7 @@ def test_watermark_with_ocr_noise_variants_is_still_dropped():
 def test_contestant_specific_content_survives_alongside_dropped_watermark():
     # A watermark in every frame, plus a dish name that only shows up briefly
     # in one frame -- only the watermark should be dropped.
-    ocr_results = _frames(
-        ["Yemekteyiz", "Mercimek Corbasi"],
-        ["Yemekteyiz"],
-        ["Yemekteyiz"],
-        ["Yemekteyiz"],
-    )
+    ocr_results = _frames(*([["Yemekteyiz", "Mercimek Corbasi"]] + [["Yemekteyiz"]] * 9))
     result = filter_persistent_fragments(ocr_results)
     assert result[0].text_lines == ["Mercimek Corbasi"]
     assert all("Yemekteyiz" not in f.text_lines for f in result)
@@ -63,6 +58,20 @@ def test_fragment_over_coverage_threshold_is_dropped():
     # 4 of 10 frames = 40% coverage, over a 0.3 threshold.
     ocr_results = _frames(*([["Ayse"]] * 4 + [[] for _ in range(6)]))
     result = filter_persistent_fragments(ocr_results, max_frame_coverage_ratio=0.3)
+    assert all(f.text_lines == [] for f in result)
+
+
+def test_filtering_is_skipped_below_min_frame_count():
+    # 3 frames, all identical -- would be 100% coverage and get wiped out if
+    # filtered, but 3 < the default min_frames_to_filter, so nothing happens.
+    ocr_results = _frames(["Ayse"], ["Ayse"], ["Ayse"])
+    result = filter_persistent_fragments(ocr_results)
+    assert [f.text_lines for f in result] == [["Ayse"], ["Ayse"], ["Ayse"]]
+
+
+def test_filtering_applies_once_min_frame_count_is_reached():
+    ocr_results = _frames(*[["Ayse"] for _ in range(10)])
+    result = filter_persistent_fragments(ocr_results, min_frames_to_filter=10)
     assert all(f.text_lines == [] for f in result)
 
 

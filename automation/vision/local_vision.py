@@ -18,12 +18,33 @@ asked to generate Turkish text:
     the Turkish text reaching the database is always a byte-exact OCR copy,
     never something the model generated.
 
+A first version handed the model one flat, deduplicated fragment list for
+the *whole* episode at once. Against a real ~90-minute episode that produced
+351 "contestants" instead of 4 — mostly OCR misreads of the show's own
+on-screen watermark, and the model unable to cluster hundreds of unrelated
+fragments into ~4 people. This version instead:
+
+  1. Filters out persistent watermark/logo noise first (persistent_
+     fragment_filter), since a genuine contestant/dish/score graphic is only
+     on screen briefly, unlike a watermark.
+  2. Clusters the remaining frames by temporal/content proximity
+     (frame_clustering), so consecutive frames showing the same on-screen
+     graphic become one small extraction unit instead of hundreds of loose
+     fragments.
+  3. Runs one extraction call per cluster, asking only "is this graphic
+     relevant, and if so what does it show" — bounded to that cluster's own
+     small fragment list, not the whole episode's.
+  4. Fuses the per-cluster partial extractions (cluster_fusion) into the
+     final contestants list, attributing dish/score-only clusters (no name of
+     their own) to whichever contestant was most recently established, and
+     merging re-mentions of an already-seen name (OCR renders it slightly
+     differently card to card) into the same record instead of duplicating.
+
 The one place this doesn't fully eliminate cross-lingual reading is dish
 category classification (e.g. deciding "Mercimek Corbasi" -> "soup"), which
 still requires the model to read a short OCR fragment. That's a much smaller,
 better-scoped task than open-ended translation/summarization, but it isn't
-zero-risk, and it's worth keeping an eye on once this runs against real
-footage.
+zero-risk.
 """
 from typing import Literal, Optional
 
@@ -33,6 +54,8 @@ from pydantic import BaseModel
 from automation.ocr.base import OcrResult
 from automation.speech.base import Transcript
 from automation.vision.base import VisionEngine, VisionObservation
+from automation.vision.cluster_fusion import fuse_cluster_extractions
+from automation.vision.frame_clustering import FrameCluster, cluster_by_proximity
 from automation.vision.persistent_fragment_filter import filter_persistent_fragments
 
 DishCategory = Literal["soup", "appetizer", "main_course", "dessert", "beverage"]
@@ -43,71 +66,52 @@ DEFAULT_MODEL = "qwen2.5:7b-instruct-q4_K_M"
 # range so the model has an explicit way to say so instead of guessing 0.
 NO_INDEX = -1
 
-EXTRACTION_PROMPT = """You are extracting structured data about a Turkish cooking \
-competition episode from two pieces of evidence. Do not translate, retype, or \
-paraphrase any Turkish text anywhere in your answer — whenever a field needs \
-Turkish text (a person's name, a city, a profession, a dish name), answer with \
-the *index number* of the matching item in the OCR fragment list below, not the \
-text itself. Use {no_index} for any index you cannot find.
+CLUSTER_PROMPT = """You are looking at one on-screen graphic from a Turkish cooking \
+competition episode — a small set of OCR text fragments detected together on the same \
+overlay (for example: a contestant's name card, a dish name overlay, or a judge's score \
+reveal). Do not translate, retype, or paraphrase any Turkish text in your answer — \
+whenever a field needs Turkish text, answer with the *index number* of the matching \
+fragment below, not the text itself. Use {no_index} for any index you cannot find.
 
-=== English transcript (translated from Turkish) ===
+=== English transcript for context (translated from Turkish) ===
 {transcript}
 
-=== OCR text fragments detected on screen (Turkish, numbered) ===
+=== OCR text fragments from this one on-screen graphic (Turkish, numbered) ===
 {ocr_fragments}
 
-First decide honestly whether the evidence actually shows a Turkish cooking \
-competition episode (contestants cooking dishes, judges scoring them). If you \
-are not confident, or the evidence doesn't support it, set is_cooking_competition \
-to false and return an empty contestants list — do not invent plausible-sounding \
-contestants, dishes, or scores that aren't clearly supported by the evidence.
+First decide honestly whether this graphic actually shows contestant/dish/score \
+information relevant to the competition — not, for example, an unrelated caption, \
+narration subtitle, or something you can't make sense of. If not, set is_relevant to \
+false and leave every other field at its default.
 
-If it does: identify each contestant. For each, give the OCR fragment index for \
-their name (required), age as a plain number if known (or null), and OCR \
-fragment indices for profession and city if known (or {no_index}). List their \
-dishes: each dish's OCR fragment index for its name, plus a category classified \
-into exactly one of soup / appetizer / main_course / dessert / beverage. List \
-their scores: each score's OCR fragment index for the judge's name, plus the \
-integer value (1-10) shown on screen.
+If it does, fill in whichever fields *this specific graphic* actually shows, and leave \
+the rest at their default — most graphics only show one or two things, not everything \
+at once: the OCR fragment index for a contestant's name if shown, their age as a plain \
+number if shown, OCR fragment indices for profession and city if shown, any dish shown \
+(OCR fragment index for its name, plus a category classified into exactly one of \
+soup / appetizer / main_course / dessert / beverage), and any judge's score shown (OCR \
+fragment index for the judge's name, plus the integer value 1-10).
 """
 
 
-class _IndexedDish(BaseModel):
+class _ClusterDish(BaseModel):
     name_index: int
     category: DishCategory
 
 
-class _IndexedScore(BaseModel):
+class _ClusterScore(BaseModel):
     judge_name_index: int
     value: int
 
 
-class _IndexedContestant(BaseModel):
-    name_index: int
+class _ClusterExtraction(BaseModel):
+    is_relevant: bool
+    name_index: int = NO_INDEX
     age: Optional[int] = None
     profession_index: int = NO_INDEX
     city_index: int = NO_INDEX
-    dishes: list[_IndexedDish] = []
-    scores: list[_IndexedScore] = []
-
-
-class _IndexedExtraction(BaseModel):
-    is_cooking_competition: bool
-    contestants: list[_IndexedContestant] = []
-
-
-def _collect_ocr_fragments(ocr_results: Optional[list[OcrResult]]) -> list[str]:
-    """Flatten every frame's OCR lines into one deduplicated, order-preserving
-    list — the numbered candidate list the model picks indices from."""
-    if not ocr_results:
-        return []
-    seen: dict[str, None] = {}
-    for result in ocr_results:
-        for line in result.text_lines:
-            line = line.strip()
-            if line and line not in seen:
-                seen[line] = None
-    return list(seen.keys())
+    dishes: list[_ClusterDish] = []
+    scores: list[_ClusterScore] = []
 
 
 def _resolve(fragments: list[str], index: Optional[int]) -> Optional[str]:
@@ -120,41 +124,38 @@ def _resolve(fragments: list[str], index: Optional[int]) -> Optional[str]:
     return fragments[index]
 
 
-def _build_prompt(transcript_text: str, fragments: list[str]) -> str:
+def _build_cluster_prompt(transcript_text: str, fragments: list[str]) -> str:
     numbered = "\n".join(f"[{i}] {frag}" for i, frag in enumerate(fragments)) or "(none detected)"
-    return EXTRACTION_PROMPT.format(
+    return CLUSTER_PROMPT.format(
         transcript=transcript_text or "(no speech detected)",
         ocr_fragments=numbered,
         no_index=NO_INDEX,
     )
 
 
-def _resolve_extraction(extraction: _IndexedExtraction, fragments: list[str]) -> dict:
-    """Turn the model's index-only output into the same structured dict shape
-    GeminiVisionEngine.analyze() returns, by substituting literal OCR text
-    back in for every index — this is the step that guarantees Turkish text
-    in the final payload is always a verbatim OCR copy, never model output."""
-    if not extraction.is_cooking_competition:
-        return {"is_cooking_competition": False, "contestants": []}
+def _resolve_cluster_extraction(extraction: _ClusterExtraction, fragments: list[str]) -> Optional[dict]:
+    """Turn one cluster's index-only model output into a partial contestant
+    dict (any field may be None/empty — most graphics only show one or two
+    things), or None if the model judged the cluster irrelevant. Every
+    Turkish field is a literal OCR copy, resolved by index, never model-
+    generated text — see module docstring for why that matters here."""
+    if not extraction.is_relevant:
+        return None
 
-    contestants = []
-    for c in extraction.contestants:
-        name = _resolve(fragments, c.name_index)
-        contestants.append({
-            "name": name if name is not None else "",
-            "age": c.age,
-            "profession": _resolve(fragments, c.profession_index),
-            "city": _resolve(fragments, c.city_index),
-            "dishes": [
-                {"name": _resolve(fragments, d.name_index) or "", "category": d.category}
-                for d in c.dishes
-            ],
-            "scores": [
-                {"judge_name": _resolve(fragments, s.judge_name_index) or "", "value": s.value}
-                for s in c.scores
-            ],
-        })
-    return {"is_cooking_competition": True, "contestants": contestants}
+    return {
+        "name": _resolve(fragments, extraction.name_index),
+        "age": extraction.age,
+        "profession": _resolve(fragments, extraction.profession_index),
+        "city": _resolve(fragments, extraction.city_index),
+        "dishes": [
+            {"name": _resolve(fragments, d.name_index) or "", "category": d.category}
+            for d in extraction.dishes
+        ],
+        "scores": [
+            {"judge_name": _resolve(fragments, s.judge_name_index) or "", "value": s.value}
+            for s in extraction.scores
+        ],
+    }
 
 
 class LocalVisionEngine(VisionEngine):
@@ -174,25 +175,39 @@ class LocalVisionEngine(VisionEngine):
         ocr_results: Optional[list[OcrResult]] = None,
         transcript: Optional[Transcript] = None,
     ) -> list[VisionObservation]:
-        # Strip persistent watermark/logo noise before the model ever sees
-        # it — see persistent_fragment_filter's module docstring for why this
-        # matters on real footage (351 "contestants" instead of 4, mostly
-        # OCR misreads of the show's own on-screen watermark).
-        filtered_ocr_results = filter_persistent_fragments(ocr_results) if ocr_results else ocr_results
-        fragments = _collect_ocr_fragments(filtered_ocr_results)
         transcript_text = transcript.text if transcript else ""
+
+        if not ocr_results:
+            return [VisionObservation(
+                frame_paths=frame_paths,
+                structured={"is_cooking_competition": False, "contestants": []},
+            )]
+
+        filtered = filter_persistent_fragments(ocr_results)
+        clusters = cluster_by_proximity(filtered)
+
+        partials = [self._extract_cluster(cluster, transcript_text) for cluster in clusters]
+        contestants = fuse_cluster_extractions(partials)
+
+        structured = {
+            "is_cooking_competition": bool(contestants),
+            "contestants": contestants,
+        }
+        return [VisionObservation(frame_paths=frame_paths, structured=structured)]
+
+    def _extract_cluster(self, cluster: FrameCluster, transcript_text: str) -> Optional[dict]:
+        if not cluster.fragments:
+            return None
 
         response = self._client.generate(
             model=self._model,
-            prompt=_build_prompt(transcript_text, fragments),
-            format=_IndexedExtraction.model_json_schema(),
+            prompt=_build_cluster_prompt(transcript_text, cluster.fragments),
+            format=_ClusterExtraction.model_json_schema(),
         )
 
         try:
-            extraction = _IndexedExtraction.model_validate_json(response["response"])
+            extraction = _ClusterExtraction.model_validate_json(response["response"])
         except (KeyError, ValueError):
-            structured = {"is_cooking_competition": False, "contestants": []}
-        else:
-            structured = _resolve_extraction(extraction, fragments)
+            return None
 
-        return [VisionObservation(frame_paths=frame_paths, structured=structured)]
+        return _resolve_cluster_extraction(extraction, cluster.fragments)

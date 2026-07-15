@@ -27,8 +27,8 @@ fragments into ~4 people. This version instead:
   1. Filters out persistent watermark/logo noise first (persistent_
      fragment_filter), since a genuine contestant/dish/score graphic is only
      on screen briefly, unlike a watermark.
-  2. Filters out sentence-like narration captions (caption_length_filter) —
-     day headers, judges' quoted commentary, prize-money announcements — that
+  2. Filters out sentence-like narration captions (caption_filter) — day
+     headers, judges' quoted commentary, prize-money announcements — that
      the per-cluster classifier otherwise accepted as "relevant" and
      hallucinated fields out of (one produced a "score" of 200000, pulled
      from a caption about a cash prize).
@@ -38,7 +38,11 @@ fragments into ~4 people. This version instead:
      fragments.
   4. Runs one extraction call per cluster, asking only "is this graphic
      relevant, and if so what does it show" — bounded to that cluster's own
-     small fragment list, not the whole episode's.
+     small fragment list, not the whole episode's. Uses temperature=0:
+     without it, re-running the identical pipeline against the identical
+     video produced wildly different contestant counts (6, then 2) purely
+     from sampling randomness in what should be a deterministic extraction
+     decision.
   5. Fuses the per-cluster partial extractions (cluster_fusion) into the
      final contestants list, attributing dish/score-only clusters (no name of
      their own) to whichever contestant was most recently established, and
@@ -215,6 +219,12 @@ class LocalVisionEngine(VisionEngine):
             model=self._model,
             prompt=_build_cluster_prompt(transcript_text, cluster.fragments),
             format=_ClusterExtraction.model_json_schema(),
+            # Structured extraction wants the same answer every time given the
+            # same input, not creative variation -- without this, re-running
+            # the identical pipeline against the identical video produced
+            # wildly different contestant counts (6, then 2) purely from
+            # Ollama's default sampling temperature (~0.7-0.8).
+            options={"temperature": 0},
         )
 
         try:

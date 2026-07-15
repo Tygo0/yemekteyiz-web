@@ -32,14 +32,14 @@ class AutomationContestantSchema(Schema):
 
 class AutomationImportSchema(Schema):
     week_id = fields.Int(required=True)
-    # The blueprint's validation gate expects exactly four contestants per
-    # week/episode — enforced here at the field level (not just in the
-    # automation pipeline's own validator) so a malformed request is rejected
-    # even if it reaches the backend directly.
+    # Real weeks don't always have exactly 4 contestants (e.g. week 215 has
+    # 5) -- only reject an empty list, enforced here at the field level (not
+    # just in the automation pipeline's own validator) so a malformed request
+    # is rejected even if it reaches the backend directly.
     contestants = fields.List(
         fields.Nested(AutomationContestantSchema),
         required=True,
-        validate=validate.Length(equal=4),
+        validate=validate.Length(min=1),
     )
 
 

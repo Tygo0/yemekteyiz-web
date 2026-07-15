@@ -9,7 +9,7 @@ from automation.models import WeekImportPayload
 if TYPE_CHECKING:
     from automation.api_client.client import BackendClient
 
-EXPECTED_CONTESTANT_COUNT = 4
+MIN_CONTESTANT_COUNT = 1
 
 
 class ValidationError(Exception):
@@ -21,9 +21,11 @@ class ValidationError(Exception):
 def validate(payload: WeekImportPayload, api_client: "BackendClient") -> None:
     errors: list[str] = []
 
-    if len(payload.contestants) != EXPECTED_CONTESTANT_COUNT:
+    # Real weeks don't always have exactly 4 contestants (e.g. week 215 has
+    # 5) -- only reject an empty extraction, not an unexpected count.
+    if len(payload.contestants) < MIN_CONTESTANT_COUNT:
         errors.append(
-            f"Expected exactly {EXPECTED_CONTESTANT_COUNT} contestants, got {len(payload.contestants)}"
+            f"Expected at least {MIN_CONTESTANT_COUNT} contestant(s), got {len(payload.contestants)}"
         )
 
     names = [c.name.strip().lower() for c in payload.contestants if c.name and c.name.strip()]

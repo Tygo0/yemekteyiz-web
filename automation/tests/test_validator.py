@@ -28,10 +28,18 @@ def test_valid_payload_passes():
     validate(payload, _FakeApiClient())  # should not raise
 
 
-def test_wrong_contestant_count_rejected():
-    payload = WeekImportPayload(week_id=1, contestants=[_valid_contestant(n) for n in "ABC"])
-    with pytest.raises(ValidationError):
+def test_non_four_contestant_count_is_accepted():
+    # Real weeks don't always have exactly 4 (e.g. week 215 has 5) -- as long
+    # as every contestant is otherwise valid, an unusual count isn't an error.
+    payload = WeekImportPayload(week_id=1, contestants=[_valid_contestant(n) for n in "ABCDE"])
+    validate(payload, _FakeApiClient())  # should not raise
+
+
+def test_empty_contestant_list_rejected():
+    payload = WeekImportPayload(week_id=1, contestants=[])
+    with pytest.raises(ValidationError) as exc:
         validate(payload, _FakeApiClient())
+    assert any("at least 1 contestant" in e for e in exc.value.errors)
 
 
 def test_duplicate_names_in_payload_rejected():

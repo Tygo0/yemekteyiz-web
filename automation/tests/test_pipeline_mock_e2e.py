@@ -44,17 +44,30 @@ def test_pipeline_rejects_when_week_missing(live_backend):
         assert any("does not exist" in e for e in exc.errors)
 
 
-def test_pipeline_rejects_wrong_contestant_count(live_backend):
+def test_pipeline_accepts_non_four_contestant_count(live_backend):
+    # Real weeks don't always have exactly 4 contestants (e.g. week 215 has
+    # 5) -- a single valid contestant should import successfully, not be
+    # rejected purely for an unusual count.
     vision = MockVisionEngine(contestants=[
         {"name": "Solo", "dishes": [{"name": "Soup", "category": "soup"}], "scores": [{"judge_name": "Zuhal", "value": 8}]}
     ])
+    pipeline = _build_pipeline(live_backend, vision=vision)
+
+    run = pipeline.run("https://youtube.com/watch?v=mock1", week_id=live_backend["week_id"])
+
+    assert len(run.payload.contestants) == 1
+    assert run.import_result["status"] == "imported"
+
+
+def test_pipeline_rejects_empty_contestant_list(live_backend):
+    vision = MockVisionEngine(contestants=[], is_cooking_competition=True)
     pipeline = _build_pipeline(live_backend, vision=vision)
 
     try:
         pipeline.run("https://youtube.com/watch?v=mock1", week_id=live_backend["week_id"])
         assert False, "expected ValidationError"
     except ValidationError as exc:
-        assert any("Expected exactly 4 contestants" in e for e in exc.errors)
+        assert any("at least 1 contestant" in e for e in exc.errors)
 
 
 def test_pipeline_refuses_when_vision_reports_irrelevant_video(live_backend):

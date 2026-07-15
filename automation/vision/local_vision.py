@@ -33,6 +33,7 @@ from pydantic import BaseModel
 from automation.ocr.base import OcrResult
 from automation.speech.base import Transcript
 from automation.vision.base import VisionEngine, VisionObservation
+from automation.vision.persistent_fragment_filter import filter_persistent_fragments
 
 DishCategory = Literal["soup", "appetizer", "main_course", "dessert", "beverage"]
 
@@ -173,7 +174,12 @@ class LocalVisionEngine(VisionEngine):
         ocr_results: Optional[list[OcrResult]] = None,
         transcript: Optional[Transcript] = None,
     ) -> list[VisionObservation]:
-        fragments = _collect_ocr_fragments(ocr_results)
+        # Strip persistent watermark/logo noise before the model ever sees
+        # it — see persistent_fragment_filter's module docstring for why this
+        # matters on real footage (351 "contestants" instead of 4, mostly
+        # OCR misreads of the show's own on-screen watermark).
+        filtered_ocr_results = filter_persistent_fragments(ocr_results) if ocr_results else ocr_results
+        fragments = _collect_ocr_fragments(filtered_ocr_results)
         transcript_text = transcript.text if transcript else ""
 
         response = self._client.generate(

@@ -1,5 +1,5 @@
 from automation.ocr.base import OcrResult
-from automation.vision.caption_length_filter import filter_caption_like_fragments
+from automation.vision.caption_filter import filter_caption_like_fragments
 
 
 def _frame(*lines: str) -> list[OcrResult]:
@@ -69,3 +69,40 @@ def test_fragment_one_word_over_limit_is_dropped():
 def test_empty_lines_are_dropped():
     result = filter_caption_like_fragments(_frame("", "  ", "Ayse"))
     assert result[0].text_lines == ["Ayse"]
+
+
+def test_day_header_compressed_under_word_limit_is_still_dropped():
+    # Real failure case: OCR merged "2." into "2GUN", leaving only 4 words --
+    # under the word-count threshold, but still clearly a day-header caption.
+    result = filter_caption_like_fragments(_frame("2GUN YARISMACISI POLYANA HOROZ"))
+    assert result[0].text_lines == []
+
+
+def test_short_narration_sentence_without_day_header_is_dropped():
+    # Real failure case: "Yusuf greets the contestants" -- only 3 words, no
+    # day-header pattern, but still narration via the "karsiliyor" root.
+    result = filter_caption_like_fragments(_frame("YUSUF YARISMACILARIMIZI KARSILIYOR"))
+    assert result[0].text_lines == []
+
+
+def test_menu_caption_is_dropped():
+    result = filter_caption_like_fragments(_frame("YUSUF'UN FINE DINING MENUSU"))
+    assert result[0].text_lines == []
+
+
+def test_turkish_diacritics_are_folded_before_matching():
+    # Same narration word, properly accented this time -- must still match.
+    result = filter_caption_like_fragments(_frame("Yusuf Yarışmacılarımızı Karşılıyor"))
+    assert result[0].text_lines == []
+
+
+def test_real_place_name_containing_karsi_root_is_not_a_false_positive():
+    # "Karsiyaka" (a real Izmir district) contains "karsi" but not the
+    # "karsil" root used for "karsiliyor" -- must not be dropped.
+    result = filter_caption_like_fragments(_frame("Karsiyaka"))
+    assert result[0].text_lines == ["Karsiyaka"]
+
+
+def test_short_fragment_without_narration_vocabulary_survives():
+    result = filter_caption_like_fragments(_frame("Polyana Horoz"))
+    assert result[0].text_lines == ["Polyana Horoz"]

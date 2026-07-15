@@ -60,7 +60,7 @@ from automation.ocr.base import OcrResult
 from automation.speech.base import Transcript
 from automation.vision.base import VisionEngine, VisionObservation
 from automation.progress import report, report_progress
-from automation.vision.caption_length_filter import filter_caption_like_fragments
+from automation.vision.caption_filter import filter_caption_like_fragments
 from automation.vision.cluster_fusion import fuse_cluster_extractions
 from automation.vision.frame_clustering import FrameCluster, cluster_by_proximity
 from automation.vision.persistent_fragment_filter import filter_persistent_fragments

@@ -68,10 +68,21 @@ def test_import_rejects_nonexistent_week(client, auth_headers):
     assert resp.status_code == 404
 
 
-def test_import_rejects_wrong_contestant_count(client, auth_headers):
+def test_import_accepts_non_four_contestant_count(client, auth_headers):
+    # Real weeks don't always have exactly 4 contestants (e.g. week 215 has
+    # 5) -- an unusual count on its own isn't a rejection reason.
     season_id = _create_season(client, auth_headers)
     week_id = _create_week(client, auth_headers, season_id)
     payload = {"week_id": week_id, "contestants": [_contestant_payload(n) for n in "ABC"]}
+    resp = client.post("/api/automation/import", json=payload, headers=auth_headers)
+    assert resp.status_code == 201
+    assert len(resp.get_json()["contestants"]) == 3
+
+
+def test_import_rejects_empty_contestant_list(client, auth_headers):
+    season_id = _create_season(client, auth_headers)
+    week_id = _create_week(client, auth_headers, season_id)
+    payload = {"week_id": week_id, "contestants": []}
     resp = client.post("/api/automation/import", json=payload, headers=auth_headers)
     assert resp.status_code == 400
 

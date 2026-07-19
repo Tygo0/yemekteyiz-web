@@ -1,4 +1,7 @@
+from typing import Optional
 from automation.vision.base import VisionEngine, VisionObservation
+from automation.ocr.base import OcrResult
+from automation.speech.base import Transcript
 
 
 class MockVisionEngine(VisionEngine):
@@ -10,7 +13,13 @@ class MockVisionEngine(VisionEngine):
         self._contestants = contestants if contestants is not None else _default_contestants()
         self._is_cooking_competition = is_cooking_competition
 
-    def analyze(self, frame_paths: list[str], prompt: str) -> list[VisionObservation]:
+    def analyze(
+        self,
+        frame_paths: list[str],
+        prompt: str,
+        ocr_results: Optional[list[OcrResult]] = None,
+        transcript: Optional[Transcript] = None,
+    ) -> list[VisionObservation]:
         return [VisionObservation(
             frame_paths=frame_paths,
             structured={

@@ -36,14 +36,26 @@ def build_pipeline(mock: bool) -> Pipeline:
     from automation.downloader.ytdlp_downloader import YtDlpDownloader
     from automation.extractor.ffmpeg_extractor import FfmpegExtractor
     from automation.ocr.easyocr_engine import EasyOcrEngine
-    from automation.vision.gemini_vision import GeminiVisionEngine
     from automation.speech.whisper_engine import WhisperSpeechEngine
+
+    if settings.vision_engine == "local":
+        from automation.vision.local_vision import LocalVisionEngine
+
+        vision = LocalVisionEngine(model=settings.ollama_model, host=settings.ollama_host or None)
+    elif settings.vision_engine == "gemini":
+        from automation.vision.gemini_vision import GeminiVisionEngine
+
+        vision = GeminiVisionEngine(api_key=settings.gemini_api_key)
+    else:
+        raise ValueError(
+            f"Unknown AUTOMATION_VISION_ENGINE={settings.vision_engine!r}, expected 'gemini' or 'local'"
+        )
 
     return Pipeline(
         downloader=YtDlpDownloader(),
         extractor=FfmpegExtractor(),
         ocr=EasyOcrEngine(),
-        vision=GeminiVisionEngine(api_key=settings.gemini_api_key),
+        vision=vision,
         speech=WhisperSpeechEngine(),
         api_client=api_client,
     )

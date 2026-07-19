@@ -1,7 +1,11 @@
+from typing import Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
 from automation.vision.base import VisionEngine, VisionObservation
+from automation.ocr.base import OcrResult
+from automation.progress import report
+from automation.speech.base import Transcript
 
 
 class _Dish(BaseModel):
@@ -38,7 +42,16 @@ class GeminiVisionEngine(VisionEngine):
         self._client = genai.Client(api_key=api_key)
         self._model = model
 
-    def analyze(self, frame_paths: list[str], prompt: str) -> list[VisionObservation]:
+    def analyze(
+        self,
+        frame_paths: list[str],
+        prompt: str,
+        ocr_results: Optional[list[OcrResult]] = None,
+        transcript: Optional[Transcript] = None,
+    ) -> list[VisionObservation]:
+        # ocr_results/transcript are unused here — Gemini reads the raw frames
+        # directly and doesn't need pre-extracted text.
+        report(f"  calling Gemini vision API with {len(frame_paths)} frame(s) (single request)...")
         # Sends every frame in one request — Gemini's multi-image understanding
         # lets it reconcile the same contestant/score appearing across frames
         # instead of us having to fuse per-frame guesses ourselves.

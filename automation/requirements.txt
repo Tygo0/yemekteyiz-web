@@ -2,6 +2,7 @@ yt-dlp==2026.7.4
 easyocr==1.7.2
 openai-whisper==20250625
 google-genai==2.10.0
+ollama==0.4.7
 pydantic==2.13.4
 requests==2.32.3
 python-dotenv==1.0.1

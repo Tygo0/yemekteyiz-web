@@ -13,8 +13,12 @@ as standalone executables (Linux + Windows, auto-built by CI on every tag — se
 with the Gemini vision stage live-verified against the real API; the backend's
 `POST /api/automation/import` is real (no longer stubbed). ✅ Containerized
 deployment (`docker-compose.yml`: frontend + backend + Postgres) verified
-end-to-end on real Docker — see `docs/DEPLOYMENT.md`. See `docs/ROADMAP.md`
-for the full phase-by-phase status.
+end-to-end on real Docker — see `docs/DEPLOYMENT.md`. ⚠️ A fully-local
+(no external API) vision engine was explored and works end-to-end, but real
+testing found its extraction accuracy isn't reliable enough for production
+use — see `docs/ROADMAP.md`'s Phase 9 for the honest writeup; Gemini remains
+the default and recommended engine. See `docs/ROADMAP.md` for the full
+phase-by-phase status.
 
 ## System Overview
 
@@ -105,6 +109,33 @@ python3 -m automation.cli --video-url <url> --week-id <id> --mock   # dry run, s
 ```
 See `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section and
 `docs/API_REFERENCE.md`'s Automation endpoints for the full picture.
+
+**Local (no external API) vision engine** — an alternative to Gemini for
+extracting contestants/dishes/scores, using a local Ollama model instead of a
+hosted API call. Set `AUTOMATION_VISION_ENGINE=local` in `automation/.env`
+(**default is `gemini`, and that's the recommended setting for any real use**);
+no `GEMINI_API_KEY` is needed in local mode. Because a 7B local model is
+unreliable at reading/writing Turkish directly, this engine never generates
+Turkish text itself — see `automation/vision/local_vision.py` for the
+index-based extraction scheme that guarantees any Turkish text in the result
+is a verbatim OCR copy, not model output. Setup:
+```bash
+ollama pull qwen2.5:7b-instruct-q4_K_M   # or set OLLAMA_MODEL to another pulled model
+ollama serve
+python3 -m pytest automation/tests/test_local_vision_smoke.py -v   # skipped unless Ollama is reachable
+```
+**Known limitation, tested honestly against real footage** (full writeup in
+`docs/ROADMAP.md`'s Phase 9): across several rounds of real-episode testing,
+the pipeline engineering held up well (runs reliably end-to-end, correctly
+refuses non-cooking footage instead of fabricating data, and the validator
+caught every bad extraction before anything reached the database — zero bad
+data in any real attempt). But the local 7B model's actual extraction
+accuracy on genuinely noisy real broadcast OCR text did not reach a reliable
+level — it can still confuse a dish name or a mid-sentence caption fragment
+for a contestant's name. This looks like a real capability ceiling of a
+small local model paired with an OCR pipeline, not a remaining bug to patch.
+Treat this engine as a tested, documented feasibility exploration, not a
+production-ready Gemini replacement.
 
 ## Deploying with Docker
 

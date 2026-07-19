@@ -128,7 +128,8 @@ automation/
   downloader/    # yt-dlp — detects & pulls new uploads
   extractor/      # ffmpeg — splits video into frames + audio
   ocr/             # PaddleOCR/EasyOCR on frames
-  vision/          # Vision-LLM (Gemini / GPT-4.1) on frames
+  vision/          # Vision-LLM (Gemini, default) or a local Ollama model
+                   #   on OCR text (see docs/ROADMAP.md Phase 9)
   speech/          # Whisper transcription + LLM extraction
   parser/          # fuses OCR + vision + speech into one structured object
   validator/       # rejects malformed/incomplete data before it's sent
@@ -141,8 +142,9 @@ Pipeline stages: Discovery → Download → Media Extraction → Visual Understa
 → Backend Integration (`POST /api/automation/import`).
 
 Validation gate (non-negotiable): no duplicate contestants, week must exist, scores
-in 1–10, exactly four contestants expected, all required fields present. Invalid
-payloads are logged and never sent to the database.
+in 1–10, at least one contestant (real weeks vary — e.g. week 215 has 5, not the
+originally-assumed 4), all required fields present. Invalid payloads are logged
+and never sent to the database.
 
 ## 7. Deployment
 

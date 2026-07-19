@@ -125,9 +125,10 @@ themselves) — the frontend renders that cell as `—`.
 `POST /automation/import` is the one place the `automation/` pipeline package
 (see `docs/ARCHITECTURE.md`'s "AI Automation Pipeline" section) talks to the
 backend — always over this REST endpoint, never direct SQL. It requires
-**exactly four contestants**, matches contestants by name against any already
-in the target week (rejecting duplicates), and requires the week to already
-exist (an admin creates it manually first).
+**at least one contestant** (real weeks vary — e.g. week 215 has 5, not the
+originally-assumed 4; see `docs/ROADMAP.md`'s Phase 9), matches contestants
+by name against any already in the target week (rejecting duplicates), and
+requires the week to already exist (an admin creates it manually first).
 
 ```json
 {
@@ -151,8 +152,8 @@ exist (an admin creates it manually first).
 
 Returns `201` with the created contestant/episode/dish/score records, or
 `400`/`404`/`409` with a clear error if the week doesn't exist, a contestant
-already exists in that week, scores are out of range, or the contestant count
-isn't exactly four.
+already exists in that week, scores are out of range, or the contestant list
+is empty.
 
 ## Error shape
 
